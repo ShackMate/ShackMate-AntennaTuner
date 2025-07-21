@@ -1,6 +1,4 @@
 #include <WebSocketsClient.h> // For remote WebSocket client
-// ...existing includes...
-#include <WebSocketsClient.h> // For remote WebSocket client
 // Required includes (WebSocketsClient.h removed)
 #include <stdint.h>
 #include <ArduinoJson.h> // For StaticJsonDocument and DeserializationError
@@ -11,15 +9,15 @@
 #include <Preferences.h>
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
-#include <time.h>                     // For NTP and time functions
-#include <LittleFS.h>                 // For serving HTML files from filesystem
-#include <ArduinoOTA.h>               // OTA update support
-#include "esp_task_wdt.h"             // Watchdog Timer
-#include "esp_heap_caps.h"            // For heap_caps_get_total_size.h"
-#include <Adafruit_NeoPixel.h>        // RGB LED support
-#include "../lib/MCP23017/MCP23017.h" // MCP23017 I2C GPIO expander
+#include <time.h>              // For NTP and time functions
+#include <LittleFS.h>          // For serving HTML files from filesystem
+#include <ArduinoOTA.h>        // OTA update support
+#include "esp_task_wdt.h"      // Watchdog Timer
+#include "esp_heap_caps.h"     // For heap_caps_get_total_size.h"
+#include <Adafruit_NeoPixel.h> // RGB LED support
+#include <MCP23017.h>          // MCP23017 I2C GPIO expander
 #include <stdint.h>
-// ...existing code...
+
 // -------------------------------------------------------------------------
 // MCP23017 Instance
 // -------------------------------------------------------------------------
@@ -120,9 +118,64 @@ void setup()
   WiFiManager wifiManager;
   // Initialize MCP23017
   mcp.begin();
-  // Example: Set GPA0 as output and turn it on
-  mcp.pinMode(0, OUTPUT); // GPA0
+  // MCP23017 Pin Configuration
+  // PA0: Red Tuning Indicator (output, pulled high, active low)
+  mcp.pinMode(0, OUTPUT);
   mcp.digitalWrite(0, HIGH);
+  // PA1: C-DN Button (input, pulled low)
+  mcp.pinMode(1, INPUT);
+  mcp.digitalWrite(1, LOW);
+  // PA2: Auto Button (input, pulled low)
+  mcp.pinMode(2, INPUT);
+  mcp.digitalWrite(2, LOW);
+  // PA3: L-DN Button (input, pulled low)
+  mcp.pinMode(3, INPUT);
+  mcp.digitalWrite(3, LOW);
+  // PA4: Tune Button (input, pulled low)
+  mcp.pinMode(4, INPUT);
+  mcp.digitalWrite(4, LOW);
+  // PA5: Green SWR Indicator (output, pulled high, active low)
+  mcp.pinMode(5, OUTPUT);
+  mcp.digitalWrite(5, HIGH);
+  // PA6: C-UP Button (input, pulled low)
+  mcp.pinMode(6, INPUT);
+  mcp.digitalWrite(6, LOW);
+  // PA7: Antenna Button (input, pulled low)
+  mcp.pinMode(7, INPUT);
+  mcp.digitalWrite(7, LOW);
+  // PA8: L-UP Button (input, pulled low)
+  mcp.pinMode(8, INPUT);
+  mcp.digitalWrite(8, LOW);
+
+  // PA0: INPUT (active high, pulled low)
+  mcp.pinMode(0, 1); // PA0 INPUT
+  // PA1: OUTPUT (active low, pulled high)
+  mcp.pinMode(1, 0);
+  mcp.digitalWrite(1, 1);
+  // PA2: OUTPUT (active low, pulled high)
+  mcp.pinMode(2, 0);
+  mcp.digitalWrite(2, 1);
+  // PA3: OUTPUT (active low, pulled high)
+  mcp.pinMode(3, 0);
+  mcp.digitalWrite(3, 1);
+  // PA4: OUTPUT (active low, pulled high)
+  mcp.pinMode(4, 0);
+  mcp.digitalWrite(4, 1);
+  // PA5: INPUT (active high, pulled low)
+  mcp.pinMode(5, 1); // PA5 INPUT
+  // PA6: OUTPUT (active low, pulled high)
+  mcp.pinMode(6, 0);
+  mcp.digitalWrite(6, 1);
+  // PA7: OUTPUT (active low, pulled high)
+  mcp.pinMode(7, 0);
+  mcp.digitalWrite(7, 1);
+  // PB0: OUTPUT (your PA8, active low, pulled high)
+  mcp.pinMode(8, 0);
+  mcp.digitalWrite(8, 1);
+
+  // Optionally: Enable pull-downs for inputs if needed (MCP23017 has internal pull-ups only)
+  // If you want to use pull-ups, call mcp.writeRegister(0x0C, 0x21); // GPPUA: enable pull-up on PA0 and PA5
+
   Serial.begin(115200);
   delay(1000);
   pinMode(LED_GREEN, OUTPUT);
@@ -466,10 +519,15 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         String button = msg.substring(firstColon + 1, secondColon);
         String stateStr = msg.substring(secondColon + 1);
         int pin = -1;
-        if (button == "button-cup")
+        // Map new button IDs to physical pins
+        if (button == "button-cup" || button == "button-cup1")
           pin = BUTTON_CUP_PIN;
-        else if (button == "button-lup")
+        else if (button == "button-cup2")
+          pin = BUTTON_CDN_PIN; // C-DN
+        else if (button == "button-lup" || button == "button-lup1")
           pin = BUTTON_LUP_PIN;
+        else if (button == "button-lup2")
+          pin = BUTTON_LDN_PIN; // L-DN
         else if (button == "button-cdn")
           pin = BUTTON_CDN_PIN;
         else if (button == "button-ldn")

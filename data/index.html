@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <title>%PROJECT_NAME% - Dashboard</title>
     <style>
+      .chain-link-btn.active {
+        background: #eaffea !important;
+        box-shadow: 0 0 0 2px #43a047, 1px 1px 3px #bbb;
+        border-radius: 10px;
+      }
+      .chain-highlight {
+        border-color: #43a047 !important;
+        box-shadow: 0 0 0 2px #43a047, 1px 1px 3px #bbb !important;
+      }
       body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         margin: 0;
@@ -24,9 +33,20 @@
       }
       .header {
         font-size: 2.5em;
-        margin-bottom: 0.5em;
-        color: #000; /* Changed title text color to black */
+        margin-bottom: 0.1em;
+        color: #22334d;
         text-align: center;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        font-weight: 500;
+      }
+      .version-label {
+        text-align: center;
+        color: #7b868c;
+        font-size: 1.35em;
+        margin-top: 0.1em;
+        margin-bottom: 1.2em;
+        font-weight: 400;
+        letter-spacing: 0.01em;
         text-shadow: none;
       }
       .subtitle {
@@ -76,7 +96,7 @@
       }
       .indicator-label {
         color: #111;
-        font-size: 1.18em;
+        font-size: 0.98em;
         font-weight: 600;
         letter-spacing: 1px;
         text-shadow: none;
@@ -84,14 +104,15 @@
       .tuner-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: repeat(3, 1fr);
-        gap: 14px 18px;
+        grid-template-rows: 1fr 1fr auto 1fr;
+        gap: 18px 32px;
         justify-items: center;
         align-items: center;
         margin: 18px 0 8px 0;
+        position: relative;
       }
       .tuner-grid button {
-        min-width: 90px;
+        min-width: 60px;
         min-height: 60px;
         font-size: 1.18em;
         border-radius: 8px;
@@ -99,10 +120,24 @@
         background: #f4f4f4;
         box-shadow: 1px 1px 3px #bbb;
         transition: background 0.2s, box-shadow 0.2s;
+        grid-column: auto;
+        grid-row: auto;
+      }
+      .tuner-grid .tune-center {
+        grid-column: 1 / span 2;
+        grid-row: 3;
+        justify-self: center;
+        align-self: center;
       }
       .tuner-grid button:active {
         background: #e0e0e0;
         box-shadow: none;
+      }
+      /* When both linked buttons are pressed together, show a stronger highlight */
+      .momentary-btn.active {
+        background: #c8f7c5 !important;
+        border-color: #43a047 !important;
+        box-shadow: 0 0 0 2px #43a047, 1px 1px 3px #bbb !important;
       }
       .latch-btn.active {
         background: #cce5ff;
@@ -154,51 +189,66 @@
       .dashboard-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
+        gap: 10px;
         max-width: 1200px;
         margin: 0 auto;
       }
       
       .dashboard-card {
-        background: rgba(255,255,255,0.95);
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2);
-        transition: transform 0.3s ease;
+        background: #f9fbfd;
+        border-radius: 18px;
+        padding: 28px 28px 22px 28px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+        border: none;
+        position: relative;
+        margin-bottom: 8px;
+        transition: box-shadow 0.2s, transform 0.2s;
+        overflow: visible;
       }
-      
+      .dashboard-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 16px;
+        bottom: 16px;
+        width: 7px;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #4f8cff 0%, #3ec6e0 100%);
+        opacity: 0.85;
+      }
       .dashboard-card:hover {
-        transform: translateY(-5px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.13);
+        transform: translateY(-3px) scale(1.012);
       }
       
       .card-header {
         display: flex;
         align-items: center;
-        margin-bottom: 15px;
-        border-bottom: 2px solid #f0f0f0;
-        padding-bottom: 10px;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 0;
+        border-bottom: none;
       }
-      
       .card-icon {
-        width: 24px;
-        height: 24px;
-        margin-right: 10px;
-        background: #667eea;
-        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        margin-right: 0;
+        background: #eaf3ff;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
+        color: #4f8cff;
+        font-size: 1.1em;
         font-weight: bold;
+        box-shadow: 0 1px 4px #dbeafe;
       }
-      
       .card-title {
-        font-size: 1.2em;
-        font-weight: bold;
-        color: #000;
+        font-size: 1.08em;
+        font-weight: 700;
+        color: #22334d;
         margin: 0;
+        letter-spacing: 0.01em;
       }
       
       .status-indicator {
@@ -232,50 +282,44 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin: 12px 0;
-        padding: 8px 0;
-        border-bottom: 1px solid #f0f0f0;
+        margin: 8px 0 8px 0;
+        padding: 0.4em 0 0.4em 0.2em;
+        font-size: 0.98em;
       }
-      
-      .metric-item:last-child {
-        border-bottom: none;
-      }
-      
       .metric-label {
-        font-weight: 500;
-        color: #666;
+        font-weight: 600;
+        color: #2a3a4d;
+        letter-spacing: 0.01em;
+        font-size: 0.97em;
       }
-      
       .metric-value {
-        font-weight: bold;
-        color: #333;
-        font-family: 'Courier New', monospace;
-      }
-      
-      .quick-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
+        font-weight: 600;
+        color: #1a2a3d;
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 0.97em;
+        background: none;
+        border: none;
+        padding: 0;
       }
       
       .action-btn {
         flex: 1;
-        padding: 10px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 5px;
+        background: linear-gradient(135deg, #4f8cff 0%, #3ec6e0 100%);
         color: white;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
-        font-weight: 500;
-        transition: all 0.3s ease;
+        font-weight: 600;
+        transition: all 0.2s;
         text-decoration: none;
         text-align: center;
         display: block;
+        box-shadow: 0 1px 4px #dbeafe;
       }
-      
       .action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transform: translateY(-2px) scale(1.0);
+        box-shadow: 0 4px 12px rgba(79,140,255,0.18);
       }
       
       .footer {
@@ -297,19 +341,12 @@
         border: 1px solid rgba(255,255,255,0.3);
       }
       
-      .temperature-display {
-        font-size: 1.5em;
-        text-align: center;
-        margin: 10px 0;
-        color: #667eea;
-        font-weight: bold;
-      }
     </style>
   </head>
   <body>
     <div class="dashboard-container">
       <div class="header">%PROJECT_NAME%</div>
-      <div class="subtitle">Version %VERSION%</div>
+      <div class="version-label">Version %VERSION%</div>
       <div class="tabs">
         <a href="/" class="active">Dashboard</a>
         <!-- Remote tab removed -->
@@ -410,13 +447,51 @@
             <span class="indicator-label">SWR</span>
           </div>
         </div>
-        <div class="tuner-grid">
-          <button id="button-ant" class="latch-btn">ANT 1</button>
-          <button id="button-auto" class="latch-btn">AUTO</button>
-          <button id="button-cup" class="momentary-btn">C-UP</button>
-          <button id="button-lup" class="momentary-btn">L-UP</button>
-          <button id="button-cdn" class="momentary-btn">C-DN</button>
-          <button id="button-ldn" class="momentary-btn">L-DN</button>
+        <div class="tuner-grid" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+          <!-- Centered row: ANT 1 | AUTO -->
+          <div style="display:flex; flex-direction:row; justify-content:center; align-items:center; gap:64px; margin-bottom:32px;">
+            <button id="button-ant" class="latch-btn">ANT 1</button>
+            <button id="button-auto" class="latch-btn">AUTO</button>
+          </div>
+          <!-- 3x3 Tuner Control Grid, all buttons and chain links aligned, no lines -->
+          <div class="tuner-3x3-grid" style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:24px; justify-items:center; align-items:center;">
+            <!-- Top row: C-UP | C-UP/L-UP chain | L-UP -->
+            <button id="button-cup1" class="momentary-btn" style="grid-row:1; grid-column:1;">C-UP</button>
+            <button id="cup-lup-link-btn" aria-label="Toggle C-UP/L-UP Link" style="grid-row:1; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+              <svg id="cup-lup-link" class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
+                <g transform="rotate(45 22 22)">
+                  <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
+                </g>
+              </svg>
+            </button>
+            <button id="button-lup1" class="momentary-btn" style="grid-row:1; grid-column:3;">L-UP</button>
+            <!-- Middle row: C-UP/C-DN chain | TUNE | L-UP/L-DN chain -->
+            <button id="cup-cdn-link-btn" aria-label="Toggle C-UP/C-DN Link" style="grid-row:2; grid-column:1; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+              <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
+                <g transform="rotate(-45 22 22)">
+                  <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
+                </g>
+              </svg>
+            </button>
+            <button id="button-tune" class="momentary-btn tune-center" style="grid-row:2; grid-column:2;">TUNE</button>
+            <button id="lup-ldn-link-btn" aria-label="Toggle L-UP/L-DN Link" style="grid-row:2; grid-column:3; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+              <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
+                <g transform="rotate(-45 22 22)">
+                  <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
+                </g>
+              </svg>
+            </button>
+            <!-- Bottom row: C-DN | C-DN/L-DN chain | L-DN -->
+            <button id="button-cup2" class="momentary-btn" style="grid-row:3; grid-column:1;">C-DN</button>
+            <button id="cdn-ldn-link-btn" aria-label="Toggle C-DN/L-DN Link" style="grid-row:3; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+              <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
+                <g transform="rotate(45 22 22)">
+                  <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
+                </g>
+              </svg>
+            </button>
+            <button id="button-lup2" class="momentary-btn" style="grid-row:3; grid-column:3;">L-DN</button>
+          </div>
         </div>
       </div>
 
@@ -458,6 +533,152 @@
     </div>
 
     <script>
+      // --- Chain Link Interactivity for C-UP/L-UP ---
+      let cupLupLinked = false;
+        function setCupLupLinkColor(blue) {
+          // Optionally update the dashed line color if you want to visually indicate the link state on the main line
+          const mainLine = document.getElementById('cup-lup-link-line');
+          if (mainLine) {
+            mainLine.setAttribute('stroke', blue ? '#2196f3' : '#ccc');
+          }
+        }
+      document.addEventListener('DOMContentLoaded', function() {
+        // --- Chain Link Button Toggle Logic ---
+        const chainLinks = [
+          { id: 'cup-lup-link-btn', state: false },
+          { id: 'cup-cdn-link-btn', state: false },
+          { id: 'lup-ldn-link-btn', state: false },
+          { id: 'cdn-ldn-link-btn', state: false }
+        ];
+        // Map chain buttons to their affected tuner buttons
+        const chainMap = {
+          'cup-lup-link-btn': ['button-cup1', 'button-lup1'], // Top row
+          'cup-cdn-link-btn': ['button-cup1', 'button-cup2'], // Left column (C-UP, C-DN)
+          'lup-ldn-link-btn': ['button-lup1', 'button-lup2'], // Right column (L-UP, L-DN)
+          'cdn-ldn-link-btn': ['button-cup2', 'button-lup2']  // Bottom row
+        };
+        chainLinks.forEach(link => {
+          const btn = document.getElementById(link.id);
+          if (!btn) return;
+          btn.classList.add('chain-link-btn');
+          btn.addEventListener('click', function(e) {
+            if (link.state) {
+              // If already active, deactivate this chain button and its highlights
+              link.state = false;
+              btn.classList.remove('active');
+              (chainMap[link.id] || []).forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.classList.remove('chain-highlight');
+              });
+            } else {
+              // Deactivate all other chain buttons and highlights
+              chainLinks.forEach(otherLink => {
+                const otherBtn = document.getElementById(otherLink.id);
+                otherLink.state = false;
+                if (otherBtn) otherBtn.classList.remove('active');
+                (chainMap[otherLink.id] || []).forEach(id => {
+                  const b = document.getElementById(id);
+                  if (b) b.classList.remove('chain-highlight');
+                });
+              });
+              // Activate this chain button and its highlights
+              link.state = true;
+              btn.classList.add('active');
+              (chainMap[link.id] || []).forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.classList.add('chain-highlight');
+              });
+            }
+            e.preventDefault();
+            e.stopPropagation();
+          });
+        });
+        // --- Link logic for all chain buttons and their mapped tuner buttons ---
+        const chainLinkLogic = [
+          { chainId: 'cup-lup-link-btn', btns: ['button-cup1', 'button-lup1'] },
+          { chainId: 'cup-cdn-link-btn', btns: ['button-cup1', 'button-cup2'] },
+          { chainId: 'lup-ldn-link-btn', btns: ['button-lup1', 'button-lup2'] },
+          { chainId: 'cdn-ldn-link-btn', btns: ['button-cup2', 'button-lup2'] }
+        ];
+        chainLinkLogic.forEach(link => {
+          const chainBtn = document.getElementById(link.chainId);
+          const btnA = document.getElementById(link.btns[0]);
+          const btnB = document.getElementById(link.btns[1]);
+          if (!chainBtn || !btnA || !btnB) return;
+          // Track last sent state for each button to suppress duplicate sends
+          let lastSentState = { [btnA.id]: null, [btnB.id]: null };
+          function setLinkedActive(active) {
+            btnA.classList.toggle('active', active);
+            btnB.classList.toggle('active', active);
+            if (active) {
+              btnA.classList.add('linked-pressed');
+              btnB.classList.add('linked-pressed');
+            } else {
+              btnA.classList.remove('linked-pressed');
+              btnB.classList.remove('linked-pressed');
+            }
+          }
+          function sendMomentary(id, state) {
+            if (lastSentState[id] !== state) {
+              lastSentState[id] = state;
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(`momentary:${id}:${state}`);
+              }
+            }
+          }
+          function handleLinkedDown(e) {
+            const linked = chainBtn.classList.contains('active');
+            if (linked) {
+              setLinkedActive(true);
+              btnA.classList.add('active');
+              btnB.classList.add('active');
+              // Send only one message for the event (one-shot, no duplicates)
+              if (e.target === btnA) {
+                sendMomentary(btnA.id, 'on');
+              } else if (e.target === btnB) {
+                sendMomentary(btnB.id, 'on');
+              }
+            } else {
+              if (e.target === btnA) {
+                btnA.classList.add('active');
+                sendMomentary(btnA.id, 'on');
+              } else if (e.target === btnB) {
+                btnB.classList.add('active');
+                sendMomentary(btnB.id, 'on');
+              }
+            }
+          }
+          function handleLinkedUp(e) {
+            const linked = chainBtn.classList.contains('active');
+            if (linked) {
+              setLinkedActive(false);
+              btnA.classList.remove('active');
+              btnB.classList.remove('active');
+              // Send only one message for the event (one-shot, no duplicates)
+              if (e.target === btnA) {
+                sendMomentary(btnA.id, 'off');
+              } else if (e.target === btnB) {
+                sendMomentary(btnB.id, 'off');
+              }
+            } else {
+              if (e.target === btnA) {
+                btnA.classList.remove('active');
+                sendMomentary(btnA.id, 'off');
+              } else if (e.target === btnB) {
+                btnB.classList.remove('active');
+                sendMomentary(btnB.id, 'off');
+              }
+            }
+          }
+          [btnA, btnB].forEach(btn => {
+            btn.addEventListener('mousedown', handleLinkedDown);
+            btn.addEventListener('touchstart', handleLinkedDown);
+            btn.addEventListener('mouseup', handleLinkedUp);
+            btn.addEventListener('mouseleave', handleLinkedUp);
+            btn.addEventListener('touchend', handleLinkedUp);
+          });
+        });
+      });
       // WebSocket connection for real-time updates
       let ws = null;
       let reconnectAttempts = 0;
@@ -523,11 +744,8 @@
           autoBtn.classList.toggle('active', isAuto);
           autoBtn.textContent = isAuto ? 'AUTO' : 'SEMI';
         }
-        // --- Always reset momentary buttons to inactive (not pressed) ---
-        ['button-cup','button-lup','button-cdn','button-ldn'].forEach(id => {
-          const btn = document.getElementById(id);
-          if (btn) btn.classList.remove('active');
-        });
+        // Do NOT reset momentary button states for C-UP, L-UP, C-DN, L-DN, TUNE on WS update
+        // Their state is now managed only by user interaction
         // --- Optionally update TUNING/SWR indicators if backend provides fields ---
         // Example: data.tuning_active, data.swr_ok (add to JSON if needed)
         // const tuningDot = document.querySelector('.indicator-dot.tuning');
@@ -686,9 +904,9 @@
           });
         });
 
-        // Momentary buttons: C-UP, L-UP, C-DN, L-DN
+        // Momentary buttons: C-DN, L-DN only (C-UP and L-UP handled by custom logic above)
         const momentaryButtons = [
-          'button-cup', 'button-lup', 'button-cdn', 'button-ldn'
+          'button-cdn', 'button-ldn'
         ];
         momentaryButtons.forEach(id => {
           const el = document.getElementById(id);
