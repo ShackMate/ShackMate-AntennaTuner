@@ -421,7 +421,7 @@
         </div>
         <div class="metric-item">
           <span class="metric-label">Free Space:</span>
-          <span class="metric-value">Available</span>
+          <span class="metric-value" data-metric="flash-free">%FLASH_FREE%</span>
         </div>
         <div class="metric-item">
           <span class="metric-label">PSRAM Size:</span>
@@ -429,74 +429,7 @@
         </div>
       </div>
 
-      <!-- Tuner Status card removed -->
-
-      <!-- Tuner Control Card -->
-      <div class="dashboard-card">
-        <div class="card-header">
-          <div class="card-icon">🎚️</div>
-          <h3 class="card-title">Tuner Control</h3>
-        </div>
-        <div class="tuner-indicators-row">
-          <div class="tuner-indicator left">
-            <span class="indicator-dot tuning"></span>
-            <span class="indicator-label">TUNING</span>
-          </div>
-          <div class="tuner-indicator right">
-            <span class="indicator-dot swr"></span>
-            <span class="indicator-label">SWR</span>
-          </div>
-        </div>
-        <div class="tuner-grid" style="display:flex; flex-direction:column; align-items:center; width:100%;">
-          <!-- Centered row: ANT 1 | AUTO -->
-          <div style="display:flex; flex-direction:row; justify-content:center; align-items:center; gap:64px; margin-bottom:32px;">
-            <button id="button-ant" class="latch-btn">ANT 1</button>
-            <button id="button-auto" class="latch-btn">AUTO</button>
-          </div>
-          <!-- 3x3 Tuner Control Grid, all buttons and chain links aligned, no lines -->
-          <div class="tuner-3x3-grid" style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:24px; justify-items:center; align-items:center;">
-            <!-- Top row: C-UP | C-UP/L-UP chain | L-UP -->
-            <button id="button-cup1" class="momentary-btn" style="grid-row:1; grid-column:1;">C-UP</button>
-            <button id="cup-lup-link-btn" aria-label="Toggle C-UP/L-UP Link" style="grid-row:1; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
-              <svg id="cup-lup-link" class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
-                <g transform="rotate(45 22 22)">
-                  <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
-                </g>
-              </svg>
-            </button>
-            <button id="button-lup1" class="momentary-btn" style="grid-row:1; grid-column:3;">L-UP</button>
-            <!-- Middle row: C-UP/C-DN chain | TUNE | L-UP/L-DN chain -->
-            <button id="cup-cdn-link-btn" aria-label="Toggle C-UP/C-DN Link" style="grid-row:2; grid-column:1; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
-              <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
-                <g transform="rotate(-45 22 22)">
-                  <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
-                </g>
-              </svg>
-            </button>
-            <button id="button-tune" class="momentary-btn tune-center" style="grid-row:2; grid-column:2;">TUNE</button>
-            <button id="lup-ldn-link-btn" aria-label="Toggle L-UP/L-DN Link" style="grid-row:2; grid-column:3; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
-              <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
-                <g transform="rotate(-45 22 22)">
-                  <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
-                </g>
-              </svg>
-            </button>
-            <!-- Bottom row: C-DN | C-DN/L-DN chain | L-DN -->
-            <button id="button-cup2" class="momentary-btn" style="grid-row:3; grid-column:1;">C-DN</button>
-            <button id="cdn-ldn-link-btn" aria-label="Toggle C-DN/L-DN Link" style="grid-row:3; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
-              <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
-                <g transform="rotate(45 22 22)">
-                  <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
-                </g>
-              </svg>
-            </button>
-            <button id="button-lup2" class="momentary-btn" style="grid-row:3; grid-column:3;">L-DN</button>
-          </div>
-        </div>
-      </div>
-
-
-      <!-- Only the new styled CI-V Information card remains -->
+      <!-- CI-V Information card under Memory & Storage Card -->
       <div class="dashboard-card">
         <div class="card-header">
           <div class="card-icon">🛰️</div>
@@ -505,19 +438,6 @@
         <div class="metric-item">
           <span class="metric-label">Device Number:</span>
           <input class="metric-value civ-device-input" data-metric="device-number" type="number" min="1" max="4" value="1" />
-    <style>
-      .civ-device-input {
-        font-size: 1.18em;
-        padding: 0.25em 0.7em;
-        border-radius: 7px;
-        border: 2px solid #c3c7cc;
-        background: #fafbfc;
-        margin-left: 0.7em;
-        width: 60px;
-        box-sizing: border-box;
-        text-align: right;
-      }
-    </style>
         </div>
         <!-- Baud Rate removed -->
         <div class="metric-item">
@@ -526,7 +446,73 @@
         </div>
       </div>
 
+      <!-- Tuner Control Card -->
+      <div class="dashboard-card">
+          <div class="card-header">
+            <div class="card-icon">🎚️</div>
+            <h3 class="card-title">Tuner Control</h3>
+          </div>
+          <div class="tuner-indicators-row">
+            <div class="tuner-indicator left">
+              <span class="indicator-dot tuning"></span>
+              <span class="indicator-label">TUNING</span>
+            </div>
+            <div class="tuner-indicator right">
+              <span class="indicator-dot swr"></span>
+              <span class="indicator-label">SWR</span>
+            </div>
+          </div>
+          <div class="tuner-grid" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+            <!-- Centered row: ANT 1 | AUTO -->
+            <div style="display:flex; flex-direction:row; justify-content:center; align-items:center; gap:64px; margin-bottom:32px;">
+              <button id="button-ant" class="latch-btn">ANT 1</button>
+              <button id="button-auto" class="latch-btn">AUTO</button>
+            </div>
+            <!-- 3x3 Tuner Control Grid, all buttons and chain links aligned, no lines -->
+            <div class="tuner-3x3-grid" style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:24px; justify-items:center; align-items:center;">
+              <!-- Top row: C-UP | C-UP/L-UP chain | L-UP -->
+              <button id="button-cup1" class="momentary-btn" style="grid-row:1; grid-column:1;">C-UP</button>
+              <button id="cup-lup-link-btn" aria-label="Toggle C-UP/L-UP Link" style="grid-row:1; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+                <svg id="cup-lup-link" class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
+                  <g transform="rotate(45 22 22)">
+                    <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
+                  </g>
+                </svg>
+              </button>
+              <button id="button-lup1" class="momentary-btn" style="grid-row:1; grid-column:3;">L-UP</button>
+              <!-- Middle row: C-UP/C-DN chain | TUNE | L-UP/L-DN chain -->
+              <button id="cup-cdn-link-btn" aria-label="Toggle C-UP/C-DN Link" style="grid-row:2; grid-column:1; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+                <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
+                  <g transform="rotate(-45 22 22)">
+                    <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
+                  </g>
+                </svg>
+              </button>
+              <button id="button-tune" class="momentary-btn tune-center" style="grid-row:2; grid-column:2;">TUNE</button>
+              <button id="lup-ldn-link-btn" aria-label="Toggle L-UP/L-DN Link" style="grid-row:2; grid-column:3; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+                <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
+                  <g transform="rotate(-45 22 22)">
+                    <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
+                  </g>
+                </svg>
+              </button>
+              <!-- Bottom row: C-DN | C-DN/L-DN chain | L-DN -->
+              <button id="button-cup2" class="momentary-btn" style="grid-row:3; grid-column:1;">C-DN</button>
+              <button id="cdn-ldn-link-btn" aria-label="Toggle C-DN/L-DN Link" style="grid-row:3; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+                <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
+                  <g transform="rotate(45 22 22)">
+                    <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
+                  </g>
+                </svg>
+              </button>
+              <button id="button-lup2" class="momentary-btn" style="grid-row:3; grid-column:3;">L-DN</button>
+            </div>
+          </div>
+        </div>
       </div>
+      </div>
+
+
       <div class="footer">
         Dashboard updates in real-time via WebSocket. Last updated: %TIME%
       </div>
@@ -794,7 +780,7 @@
         let civDisplay = '0x' + civHex;
         updateElementIfExists('[data-metric="civ-address"]', civDisplay);
 
-// Remove duplicate DOMContentLoaded above. Only use the one below.
+// Remove duplicate DOMContentLoaded above.
 
         // Update connection info
         updateElementIfExists('[data-metric="ip-address"]', data.ip || 'Unknown');

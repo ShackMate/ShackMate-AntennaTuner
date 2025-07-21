@@ -1,6 +1,5 @@
 #include <WebSocketsClient.h> // For remote WebSocket client
 // Required includes (WebSocketsClient.h removed)
-#include <stdint.h>
 #include <ArduinoJson.h> // For StaticJsonDocument and DeserializationError
 #include <WiFi.h>
 #include <WiFiManager.h>
@@ -16,7 +15,6 @@
 #include "esp_heap_caps.h"     // For heap_caps_get_total_size.h"
 #include <Adafruit_NeoPixel.h> // RGB LED support
 #include <MCP23017.h>          // MCP23017 I2C GPIO expander
-#include <stdint.h>
 
 // -------------------------------------------------------------------------
 // MCP23017 Instance
@@ -80,41 +78,29 @@ Preferences devicePrefs;
 // -------------------------------------------------------------------------
 // Global Variables and Objects
 // -------------------------------------------------------------------------
-String deviceIP = "";
-String tcpPort = "";
-String discoveredWsServer = ""; // Holds discovered IP:port for dashboard/remoteWS
-
 bool antState = false;  // false = unlatched ("ANT 1")
 bool autoState = false; // false = unlatched ("SEMI")
 bool otaActive = false;
 bool captivePortalActive = false;
-
+bool remoteWSConnected = false;
+String deviceIP = "";
+String tcpPort = "";
+String discoveredWsServer = "";
 AsyncWebServer httpServer(80);
 AsyncWebServer *wsServer = nullptr;
 AsyncWebSocket ws("/ws");
-
-AsyncWebSocket dashboardWs("/dashboard-ws"); // WebSocket for dashboard on port 80
-WiFiUDP udp;
+AsyncWebSocket dashboardWs("/dashboard-ws");
 WiFiUDP udpDiscovery;
-unsigned long lastUdpBroadcast = 0;
-const unsigned long broadcastInterval = 15000; // 15 seconds
-
-// CI-V Address (for dashboard display and control)
-uint8_t civAddr = 0xB4; // Default CI-V address (can be set dynamically)
-
-// --- Remote WebSocket Client (remoteWS) ---
+uint8_t civAddr = 0xB4;
 WebSocketsClient remoteWS;
 String lastRemoteWsServer = "";
-
-bool remoteWSConnected = false;
 
 // -------------------------------------------------------------------------
 // Setup Function
 // -------------------------------------------------------------------------
 void setup()
 {
-  Serial.begin(115200);
-  Serial.println("[DEBUG] Setup started");
+  // Serial removed
   WiFiManager wifiManager;
   // Initialize MCP23017
   mcp.begin();
@@ -176,8 +162,7 @@ void setup()
   // Optionally: Enable pull-downs for inputs if needed (MCP23017 has internal pull-ups only)
   // If you want to use pull-ups, call mcp.writeRegister(0x0C, 0x21); // GPPUA: enable pull-up on PA0 and PA5
 
-  Serial.begin(115200);
-  delay(1000);
+  // Serial removed
   pinMode(LED_GREEN, OUTPUT);
   setupButtonOutputs();
 
@@ -188,17 +173,12 @@ void setup()
 
   if (!LittleFS.begin())
   {
-    Serial.println("LittleFS mount failed");
     setAtomLed(255, 0, 0); // Red for error
-  }
-  else
-  {
-    // LittleFS mounted successfully
   }
 
   // Load latched button states from NVS
   loadLatchedStates();
-  Serial.println("[DEBUG] Called loadLatchedStates() in setup()");
+  // Serial removed
 
   wifiPrefs.begin("wifi", false);
   wifiPrefs.end();
@@ -207,18 +187,16 @@ void setup()
   WiFi.mode(WIFI_AP_STA);
 
   // WiFiManager captive portal for configuration.
-  Serial.println("Starting WiFiManager for configuration.");
+  // Serial removed
   captivePortalActive = true;
   setAtomLed(128, 0, 128); // Purple during WiFi setup
 
   wifiManager.setAPCallback([](WiFiManager *wm)
                             {
-    Serial.println("Entered configuration mode (AP mode)");
-    Serial.print("AP IP: ");
-    Serial.println(WiFi.softAPIP().toString()); });
+                              // Serial removed
+                            });
   if (!wifiManager.autoConnect("shackmate-tuner"))
   {
-    Serial.println("Failed to connect using WiFiManager, restarting...");
     setAtomLed(255, 0, 0); // Red for failure
     delay(3000);
     ESP.restart();
@@ -231,7 +209,7 @@ void setup()
 
   // --- End WiFi connection section ---
 
-  Serial.println("Connected, IP address: " + deviceIP);
+  // Serial removed
 
   // Load device number from NVS and set CI-V address
   devicePrefs.begin("device", false);
@@ -240,12 +218,10 @@ void setup()
   if (hasDeviceNumber)
   {
     storedDeviceNumber = devicePrefs.getInt("deviceNumber", 1);
-    Serial.printf("[NVS] Read deviceNumber from NVS: %d\n", storedDeviceNumber);
   }
   else
   {
     devicePrefs.putInt("deviceNumber", 1);
-    Serial.println("[NVS] deviceNumber not found, initializing to 1");
   }
   storedDeviceNumber = constrain(storedDeviceNumber, 1, 4);
   civAddr = 0xB3 + storedDeviceNumber;
@@ -257,25 +233,13 @@ void setup()
   // Time setup
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo))
-    Serial.println("Failed to obtain time");
-  else
-    Serial.println("Time synchronized");
+  getLocalTime(&timeinfo);
 
   // mDNS setup
-  if (!MDNS.begin(MDNS_NAME))
-    Serial.println("Error setting up mDNS responder!");
-  else
-  {
-    Serial.print("mDNS responder started: http://");
-    Serial.print(MDNS_NAME);
-    Serial.println(".local");
-  }
+  MDNS.begin(MDNS_NAME);
 
   // Start UDP
-  udp.begin(UDP_PORT);
   udpDiscovery.begin(UDP_PORT);
-  Serial.printf("UDP discovery listener started on port %d\n", UDP_PORT);
 
   // Set up WebSocket server on default port 4000.
   tcpPort = "4000";
@@ -283,7 +247,6 @@ void setup()
   wsServer = new AsyncWebServer(4000);
   wsServer->addHandler(&ws);
   wsServer->begin();
-  Serial.printf("WebSocket server started on port 4000\n");
 
   // Set up dashboard WebSocket on port 80
   dashboardWs.onEvent(onDashboardWsEvent);
@@ -298,38 +261,24 @@ void setup()
     // Serve a 204 No Content for favicon.ico to avoid 500 errors
     request->send(204); });
   httpServer.begin();
-  Serial.println("HTTP server started on port 80");
+  // Serial removed
 
   // OTA Setup
   ArduinoOTA.onStart([]()
                      {
-                       Serial.println("OTA update starting...");
                        otaActive = true;
                        setAtomLed(255, 255, 255); // White during OTA
                      });
   ArduinoOTA.onEnd([]()
                    {
-                     Serial.println("\nOTA update complete");
                      otaActive = false;
                      setAtomLed(0, 255, 0); // Green when complete
                    });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
-                        { Serial.printf("OTA Progress: %u%%\r", (progress * 100) / total); });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {});
   ArduinoOTA.onError([](ota_error_t error)
                      {
-    Serial.printf("OTA Error[%u]: ", error);
     setAtomLed(255, 0, 0); // Red for error
-    otaActive = false;
-    if (error == OTA_AUTH_ERROR)
-      Serial.println("Authentication Failed");
-    else if (error == OTA_BEGIN_ERROR)
-      Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR)
-      Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR)
-      Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR)
-      Serial.println("End Failed"); });
+    otaActive = false; });
   ArduinoOTA.begin();
   Serial.println("OTA update service started");
 
@@ -342,9 +291,6 @@ void setup()
 void updateCivAddressAndNotify(uint8_t newCivAddr)
 {
   civAddr = newCivAddr;
-  Serial.printf("[CI-V] Updated CI-V address to 0x%02X\n", civAddr);
-  // Optionally, persist to NVS or perform other actions here
-  // Notify all dashboards of the change
   sendDashboardUpdate(nullptr);
 }
 
@@ -402,7 +348,6 @@ void loadLatchedStates()
   antState = configPrefs.getBool("ant", false);
   autoState = configPrefs.getBool("auto", false);
   configPrefs.end();
-  Serial.printf("[NVS] loadLatchedStates: antState=%d, autoState=%d\n", antState, autoState);
 }
 
 String processTemplate(String tmpl)
@@ -480,7 +425,6 @@ String loadFile(const char *path)
   File file = LittleFS.open(path, "r");
   if (!file || file.isDirectory())
   {
-    Serial.printf("Failed to open file: %s\n", path);
     return "";
   }
   String content;
@@ -494,14 +438,12 @@ String loadFile(const char *path)
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
-  Serial.println("[DEBUG] onWsEvent called");
+  // Serial removed
   switch (type)
   {
   case WS_EVT_CONNECT:
-    Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
     break;
   case WS_EVT_DISCONNECT:
-    Serial.printf("WebSocket client #%u disconnected\n", client->id());
     break;
   case WS_EVT_DATA:
   {
@@ -519,27 +461,21 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         String button = msg.substring(firstColon + 1, secondColon);
         String stateStr = msg.substring(secondColon + 1);
         int pin = -1;
-        // Map new button IDs to physical pins
         if (button == "button-cup" || button == "button-cup1")
           pin = BUTTON_CUP_PIN;
-        else if (button == "button-cup2")
-          pin = BUTTON_CDN_PIN; // C-DN
+        else if (button == "button-cup2" || button == "button-cdn")
+          pin = BUTTON_CDN_PIN;
         else if (button == "button-lup" || button == "button-lup1")
           pin = BUTTON_LUP_PIN;
-        else if (button == "button-lup2")
-          pin = BUTTON_LDN_PIN; // L-DN
-        else if (button == "button-cdn")
-          pin = BUTTON_CDN_PIN;
-        else if (button == "button-ldn")
+        else if (button == "button-lup2" || button == "button-ldn")
           pin = BUTTON_LDN_PIN;
         else if (button == "button-tune")
           pin = BUTTON_TUNE_PIN;
         if (pin != -1)
         {
           digitalWrite(pin, (stateStr == "on") ? HIGH : LOW);
-          Serial.printf("Momentary command: %s set to %s\n", button.c_str(), stateStr.c_str());
           client->text("Momentary command processed");
-          sendDashboardUpdate(nullptr); // Broadcast update to all dashboards
+          sendDashboardUpdate(nullptr);
         }
         else
         {
@@ -556,35 +492,21 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
         String button = msg.substring(firstColon + 1, secondColon);
         String stateStr = msg.substring(secondColon + 1);
         bool state = (stateStr == "true");
-
         configPrefs.begin("config", false);
         if (button == "button-ant")
-        {
           configPrefs.putBool("ant", state);
-          Serial.printf("[NVS] putBool: ant=%d\n", state);
-        }
         else if (button == "button-auto")
-        {
           configPrefs.putBool("auto", state);
-          Serial.printf("[NVS] putBool: auto=%d\n", state);
-        }
         configPrefs.end();
-        // Always reload from NVS after write
         loadLatchedStates();
         if (button == "button-ant" || button == "button-auto")
-        {
           setButtonOutput(button);
-        }
-
-        Serial.printf("Latch command: %s set to %s\n", button.c_str(), stateStr.c_str());
-
-        sendDashboardUpdate(nullptr); // Broadcast update to all dashboards
+        sendDashboardUpdate(nullptr);
         client->text("Latch command processed");
       }
     }
     else
     {
-      Serial.printf("Received via WebSocket: %s\n", msg.c_str());
       client->text("Message received: " + msg);
     }
     break;
@@ -596,16 +518,13 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 void onDashboardWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
-  Serial.println("[DEBUG] onDashboardWsEvent called");
+  // Serial removed
   switch (type)
   {
   case WS_EVT_CONNECT:
-    Serial.printf("Dashboard WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
-    // Send initial dashboard data
     sendDashboardUpdate(client);
     break;
   case WS_EVT_DISCONNECT:
-    Serial.printf("Dashboard WebSocket client #%u disconnected\n", client->id());
     break;
   case WS_EVT_DATA:
   {
@@ -614,30 +533,18 @@ void onDashboardWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, Aw
     {
       msg += (char)data[i];
     }
-    Serial.printf("Dashboard WebSocket received: %s\n", msg.c_str());
     if (msg == "request_update")
     {
       sendDashboardUpdate(client);
     }
     else if (msg.startsWith("{"))
     {
-      Serial.println("[DEBUG] Attempting to parse JSON for device number change...");
       StaticJsonDocument<128> doc;
       DeserializationError err = deserializeJson(doc, msg);
-      if (err)
-      {
-        Serial.printf("[DEBUG] JSON parse error: %s\n", err.c_str());
-      }
-      else if (!doc.containsKey("set_device_number"))
-      {
-        Serial.println("[DEBUG] JSON does not contain 'set_device_number' key.");
-      }
-      else
+      if (!err && doc.containsKey("set_device_number"))
       {
         int newDeviceNumber = doc["set_device_number"];
-        Serial.printf("[DEBUG] Calling setDeviceNumber(%d)\n", newDeviceNumber);
         setDeviceNumber(newDeviceNumber);
-        // Only send JSON response, not plain text
         sendDashboardUpdate(client);
       }
     }
@@ -652,27 +559,17 @@ void onDashboardWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, Aw
         bool state = (stateStr == "true");
         configPrefs.begin("config", false);
         if (button == "button-ant")
-        {
           configPrefs.putBool("ant", state);
-          Serial.printf("[NVS] putBool: ant=%d\n", state);
-        }
         else if (button == "button-auto")
-        {
           configPrefs.putBool("auto", state);
-          Serial.printf("[NVS] putBool: auto=%d\n", state);
-        }
         configPrefs.end();
         loadLatchedStates();
         if (button == "button-ant" || button == "button-auto")
-        {
           setButtonOutput(button);
-        }
-        Serial.printf("Latch command: %s set to %s\n", button.c_str(), stateStr.c_str());
         sendDashboardUpdate(nullptr);
         client->text("Latch command processed");
       }
     }
-    // Do not send any plain text or non-JSON responses to dashboard clients
     break;
   }
   default:
@@ -798,23 +695,14 @@ void handleUpdateLatch(AsyncWebServerRequest *request)
   bool state = (request->arg("state") == "true");
   configPrefs.begin("config", false);
   if (button == "button-ant")
-  {
     configPrefs.putBool("ant", state);
-    Serial.printf("[NVS] putBool: ant=%d\n", state);
-  }
   else if (button == "button-auto")
-  {
     configPrefs.putBool("auto", state);
-    Serial.printf("[NVS] putBool: auto=%d\n", state);
-  }
   configPrefs.end();
-  // Always reload from NVS after write
   loadLatchedStates();
   if (button == "button-ant" || button == "button-auto")
-  {
     setButtonOutput(button);
-  }
-  sendDashboardUpdate(nullptr); // Broadcast update to all dashboards
+  sendDashboardUpdate(nullptr);
   request->send(200, "text/plain", "OK");
 }
 
@@ -836,8 +724,6 @@ void setDeviceNumber(int newDeviceNumber)
   newDeviceNumber = constrain(newDeviceNumber, 1, 4);
   devicePrefs.begin("device", false);
   devicePrefs.putInt("deviceNumber", newDeviceNumber);
-  int verifyDeviceNumber = devicePrefs.getInt("deviceNumber", -1);
-  Serial.printf("[NVS] Verified deviceNumber in NVS: %d\n", verifyDeviceNumber);
   devicePrefs.end();
   civAddr = 0xB3 + newDeviceNumber;
   sendDashboardUpdate(nullptr);
@@ -978,18 +864,13 @@ void onRemoteWsEvent(WStype_t type, uint8_t *payload, size_t length)
   {
   case WStype_CONNECTED:
     remoteWSConnected = true;
-    Serial.printf("[remoteWS] Connected to remote WebSocket server\n");
     break;
   case WStype_DISCONNECTED:
     remoteWSConnected = false;
-    Serial.printf("[remoteWS] Disconnected from remote WebSocket server\n");
     break;
   case WStype_TEXT:
-    Serial.printf("[remoteWS] Received: %s\n", (const char *)payload);
-    // Optionally, handle remote commands here
     break;
   case WStype_ERROR:
-    Serial.printf("[remoteWS] Error\n");
     break;
   default:
     break;
