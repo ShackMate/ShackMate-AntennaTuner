@@ -471,17 +471,17 @@
             <!-- 3x3 Tuner Control Grid, all buttons and chain links aligned, no lines -->
             <div class="tuner-3x3-grid" style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:24px; justify-items:center; align-items:center;">
               <!-- Top row: C-UP | C-UP/L-UP chain | L-UP -->
-              <button id="button-cup1" class="momentary-btn" style="grid-row:1; grid-column:1;">C-UP</button>
-              <button id="cup-lup-link-btn" aria-label="Toggle C-UP/L-UP Link" style="grid-row:1; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+              <button id="button-cup1" class="momentary-btn" style="grid-row:1; grid-column:1;" title="Increase Capacitance">C-UP</button>
+              <button id="cup-lup-link-btn" aria-label="Toggle C-UP/L-UP Link" title="Increase both Capacitance and Inductance" style="grid-row:1; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
                 <svg id="cup-lup-link" class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
                   <g transform="rotate(45 22 22)">
                     <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
                   </g>
                 </svg>
               </button>
-              <button id="button-lup1" class="momentary-btn" style="grid-row:1; grid-column:3;">L-UP</button>
+              <button id="button-lup1" class="momentary-btn" style="grid-row:1; grid-column:3;" title="Increase Inductance">L-UP</button>
               <!-- Middle row: C-UP/C-DN chain | TUNE | L-UP/L-DN chain -->
-              <button id="cup-cdn-link-btn" aria-label="Toggle C-UP/C-DN Link" style="grid-row:2; grid-column:1; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+              <button id="cup-cdn-link-btn" aria-label="Toggle C-UP/C-DN Link" title="Toggle Capacitor from Input / Output" style="grid-row:2; grid-column:1; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
                 <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
                   <g transform="rotate(-45 22 22)">
                     <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
@@ -489,7 +489,7 @@
                 </svg>
               </button>
               <button id="button-tune" class="momentary-btn tune-center" style="grid-row:2; grid-column:2;">TUNE</button>
-              <button id="lup-ldn-link-btn" aria-label="Toggle L-UP/L-DN Link" style="grid-row:2; grid-column:3; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+              <button id="lup-ldn-link-btn" aria-label="Toggle L-UP/L-DN Link" title="Toggle SWR Beeper" style="grid-row:2; grid-column:3; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
                 <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
                   <g transform="rotate(-45 22 22)">
                     <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
@@ -497,15 +497,15 @@
                 </svg>
               </button>
               <!-- Bottom row: C-DN | C-DN/L-DN chain | L-DN -->
-              <button id="button-cup2" class="momentary-btn" style="grid-row:3; grid-column:1;">C-DN</button>
-              <button id="cdn-ldn-link-btn" aria-label="Toggle C-DN/L-DN Link" style="grid-row:3; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
+              <button id="button-cup2" class="momentary-btn" style="grid-row:3; grid-column:1;" title="Decrease Capacitance">C-DN</button>
+              <button id="cdn-ldn-link-btn" aria-label="Toggle C-DN/L-DN Link" title="Bypass Tuner" style="grid-row:3; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
                 <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
                   <g transform="rotate(45 22 22)">
                     <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
                   </g>
                 </svg>
               </button>
-              <button id="button-lup2" class="momentary-btn" style="grid-row:3; grid-column:3;">L-DN</button>
+              <button id="button-lup2" class="momentary-btn" style="grid-row:3; grid-column:3;" title="Decrease Inductance">L-DN</button>
             </div>
           </div>
         </div>
