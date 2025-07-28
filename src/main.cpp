@@ -1,6 +1,5 @@
 #include <WebSocketsClient.h> // For remote WebSocket client
-// Required includes (WebSocketsClient.h removed)
-#include <ArduinoJson.h> // For StaticJsonDocument and DeserializationError
+#include <ArduinoJson.h>      // For StaticJsonDocument and DeserializationError
 #include <WiFi.h>
 #include <WiFiManager.h>
 #include <AsyncTCP.h>
@@ -14,12 +13,19 @@
 #include "esp_task_wdt.h"      // Watchdog Timer
 #include "esp_heap_caps.h"     // For heap_caps_get_total_size.h"
 #include <Adafruit_NeoPixel.h> // RGB LED support
-#include <MCP23017.h>          // MCP23017 I2C GPIO expander
+// --- MCP23017 I2C GPIO expander ---
+#include <Wire.h>
+#include <MCP23017.h>
+
+#include "SMCIV.h" // Add CI-V protocol handler include
 
 // -------------------------------------------------------------------------
 // MCP23017 Instance
 // -------------------------------------------------------------------------
 MCP23017 mcp(0x20); // Default I2C address 0x20
+// --- MCP23017 GPIO definitions for dashboard indicators ---
+#define MCP_TUNING_PIN 0 // GPA0
+#define MCP_SWR_PIN 1    // GPA1
 
 // -------------------------------------------------------------------------
 // Forward declarations
@@ -36,6 +42,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 void onDashboardWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
 void handleRoot(AsyncWebServerRequest *request);
 void handleUpdateLatch(AsyncWebServerRequest *request);
+void setButtonOutput(const String &button);
 
 // (Adjust these definitions as appropriate for your hardware.)
 #define BUTTON_ANT_PIN 0
@@ -60,8 +67,8 @@ void handleUpdateLatch(AsyncWebServerRequest *request);
 // Pin Definitions
 #define LED_GREEN 2
 
-// --- M5 Atom RGB LED Configuration ---
-#define ATOM_LED_PIN 27 // M5 Atom Lite RGB LED pin
+// --- RGB LED Configuration (Adafruit NeoPixel) ---
+#define ATOM_LED_PIN 35 // Use GPIO 35 for RGB LED
 #define ATOM_NUM_LEDS 1
 Adafruit_NeoPixel atom_led(ATOM_NUM_LEDS, ATOM_LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -74,6 +81,8 @@ Preferences wifiPrefs;
 Preferences configPrefs;
 // Preferences for device number (dedicated instance)
 Preferences devicePrefs;
+// Preferences for CI-V model selection
+Preferences civModelPrefs;
 
 // -------------------------------------------------------------------------
 // Global Variables and Objects
@@ -95,78 +104,32 @@ uint8_t civAddr = 0xB4;
 WebSocketsClient remoteWS;
 String lastRemoteWsServer = "";
 
-// -------------------------------------------------------------------------
-// Setup Function
-// -------------------------------------------------------------------------
+// SMCIV instance for CI-V handling
+SMCIV smciv;
 void setup()
 {
-  // Serial removed
+  Serial.begin(115200);
+  Serial.println("[DEBUG] setup() start");
   WiFiManager wifiManager;
-  // Initialize MCP23017
+
+  // --- MCP23017 Setup ---
+  Wire.begin();
   mcp.begin();
-  // MCP23017 Pin Configuration
-  // PA0: Red Tuning Indicator (output, pulled high, active low)
-  mcp.pinMode(0, OUTPUT);
-  mcp.digitalWrite(0, HIGH);
-  // PA1: C-DN Button (input, pulled low)
-  mcp.pinMode(1, INPUT);
-  mcp.digitalWrite(1, LOW);
-  // PA2: Auto Button (input, pulled low)
-  mcp.pinMode(2, INPUT);
-  mcp.digitalWrite(2, LOW);
-  // PA3: L-DN Button (input, pulled low)
-  mcp.pinMode(3, INPUT);
-  mcp.digitalWrite(3, LOW);
-  // PA4: Tune Button (input, pulled low)
-  mcp.pinMode(4, INPUT);
-  mcp.digitalWrite(4, LOW);
-  // PA5: Green SWR Indicator (output, pulled high, active low)
-  mcp.pinMode(5, OUTPUT);
-  mcp.digitalWrite(5, HIGH);
-  // PA6: C-UP Button (input, pulled low)
-  mcp.pinMode(6, INPUT);
-  mcp.digitalWrite(6, LOW);
-  // PA7: Antenna Button (input, pulled low)
-  mcp.pinMode(7, INPUT);
-  mcp.digitalWrite(7, LOW);
-  // PA8: L-UP Button (input, pulled low)
-  mcp.pinMode(8, INPUT);
-  mcp.digitalWrite(8, LOW);
+  mcp.pinMode(MCP_TUNING_PIN, OUTPUT);
+  mcp.digitalWrite(MCP_TUNING_PIN, LOW); // Default LOW (inactive)
+  mcp.pinMode(MCP_SWR_PIN, OUTPUT);
+  mcp.digitalWrite(MCP_SWR_PIN, LOW); // Default LOW (inactive)
+  // Debug: print MCP23017 pin states after init
+  Serial.printf("[DEBUG][setup] MCP_TUNING_PIN: %d\n", mcp.digitalRead(MCP_TUNING_PIN));
+  Serial.printf("[DEBUG][setup] MCP_SWR_PIN: %d\n", mcp.digitalRead(MCP_SWR_PIN));
 
-  // PA0: INPUT (active high, pulled low)
-  mcp.pinMode(0, 1); // PA0 INPUT
-  // PA1: OUTPUT (active low, pulled high)
-  mcp.pinMode(1, 0);
-  mcp.digitalWrite(1, 1);
-  // PA2: OUTPUT (active low, pulled high)
-  mcp.pinMode(2, 0);
-  mcp.digitalWrite(2, 1);
-  // PA3: OUTPUT (active low, pulled high)
-  mcp.pinMode(3, 0);
-  mcp.digitalWrite(3, 1);
-  // PA4: OUTPUT (active low, pulled high)
-  mcp.pinMode(4, 0);
-  mcp.digitalWrite(4, 1);
-  // PA5: INPUT (active high, pulled low)
-  mcp.pinMode(5, 1); // PA5 INPUT
-  // PA6: OUTPUT (active low, pulled high)
-  mcp.pinMode(6, 0);
-  mcp.digitalWrite(6, 1);
-  // PA7: OUTPUT (active low, pulled high)
-  mcp.pinMode(7, 0);
-  mcp.digitalWrite(7, 1);
-  // PB0: OUTPUT (your PA8, active low, pulled high)
-  mcp.pinMode(8, 0);
-  mcp.digitalWrite(8, 1);
-
-  // Optionally: Enable pull-downs for inputs if needed (MCP23017 has internal pull-ups only)
-  // If you want to use pull-ups, call mcp.writeRegister(0x0C, 0x21); // GPPUA: enable pull-up on PA0 and PA5
-
-  // Serial removed
   pinMode(LED_GREEN, OUTPUT);
+  Serial.println("[DEBUG] after pinMode");
   setupButtonOutputs();
+  Serial.println("[DEBUG] after setupButtonOutputs");
 
-  // Initialize RGB LED
+  // Initialize M5Unified (must be called before using M5 LED functions)
+  // Initialize RGB LED with step-by-step debug
   atom_led.begin();
   atom_led.setBrightness(50);
   setAtomLed(0, 0, 0); // LED OFF initially
@@ -178,7 +141,6 @@ void setup()
 
   // Load latched button states from NVS
   loadLatchedStates();
-  // Serial removed
 
   wifiPrefs.begin("wifi", false);
   wifiPrefs.end();
@@ -187,14 +149,11 @@ void setup()
   WiFi.mode(WIFI_AP_STA);
 
   // WiFiManager captive portal for configuration.
-  // Serial removed
   captivePortalActive = true;
   setAtomLed(128, 0, 128); // Purple during WiFi setup
 
   wifiManager.setAPCallback([](WiFiManager *wm)
-                            {
-                              // Serial removed
-                            });
+                            { Serial.println("[DEBUG] WiFiManager AP Callback"); });
   if (!wifiManager.autoConnect("shackmate-tuner"))
   {
     setAtomLed(255, 0, 0); // Red for failure
@@ -203,13 +162,14 @@ void setup()
     delay(5000);
   }
   deviceIP = WiFi.localIP().toString();
+  Serial.print("[INFO] WiFi connected, IP address: ");
+  Serial.println(deviceIP);
 
   captivePortalActive = false;
   setAtomLed(0, 255, 0); // Green after WiFi connects
+  Serial.println("[DEBUG] after captivePortalActive");
 
   // --- End WiFi connection section ---
-
-  // Serial removed
 
   // Load device number from NVS and set CI-V address
   devicePrefs.begin("device", false);
@@ -226,20 +186,28 @@ void setup()
   storedDeviceNumber = constrain(storedDeviceNumber, 1, 4);
   civAddr = 0xB3 + storedDeviceNumber;
   devicePrefs.end();
+  Serial.print("[DEBUG] Device number: ");
+  Serial.println(storedDeviceNumber);
+  Serial.print("[DEBUG] CI-V address: 0x");
+  Serial.println(civAddr, HEX);
 
   wifiPrefs.begin("wifi", false);
   wifiPrefs.end();
+  Serial.println("[DEBUG] after wifiPrefs 2");
 
   // Time setup
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
   struct tm timeinfo;
   getLocalTime(&timeinfo);
+  Serial.println("[DEBUG] after time setup");
 
   // mDNS setup
   MDNS.begin(MDNS_NAME);
+  Serial.println("[DEBUG] after mDNS");
 
   // Start UDP
   udpDiscovery.begin(UDP_PORT);
+  Serial.println("[DEBUG] after udpDiscovery");
 
   // Set up WebSocket server on default port 4000.
   tcpPort = "4000";
@@ -247,6 +215,7 @@ void setup()
   wsServer = new AsyncWebServer(4000);
   wsServer->addHandler(&ws);
   wsServer->begin();
+  Serial.println("[DEBUG] after wsServer");
 
   // Set up dashboard WebSocket on port 80
   dashboardWs.onEvent(onDashboardWsEvent);
@@ -254,100 +223,46 @@ void setup()
 
   // HTTP Routes
   httpServer.on("/", HTTP_GET, handleRoot);
-  // /remote HTTP route removed
   httpServer.on("/updateLatch", HTTP_GET, handleUpdateLatch);
   httpServer.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request)
-                {
-    // Serve a 204 No Content for favicon.ico to avoid 500 errors
-    request->send(204); });
+                { request->send(204); });
   httpServer.begin();
-  // Serial removed
+  Serial.println("[DEBUG] after httpServer");
 
   // OTA Setup
   ArduinoOTA.onStart([]()
                      {
-                       otaActive = true;
-                       setAtomLed(255, 255, 255); // White during OTA
-                     });
+    otaActive = true;
+    setAtomLed(255, 255, 255); // White during OTA
+    Serial.println("[DEBUG] OTA start"); });
   ArduinoOTA.onEnd([]()
                    {
-                     otaActive = false;
-                     setAtomLed(0, 255, 0); // Green when complete
-                   });
+    otaActive = false;
+    setAtomLed(0, 255, 0); // Green when complete
+    Serial.println("[DEBUG] OTA end"); });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {});
   ArduinoOTA.onError([](ota_error_t error)
                      {
     setAtomLed(255, 0, 0); // Red for error
-    otaActive = false; });
+    otaActive = false;
+    Serial.println("[DEBUG] OTA error"); });
   ArduinoOTA.begin();
-  Serial.println("OTA update service started");
+  Serial.println("[DEBUG] after ArduinoOTA.begin");
 
   setAtomLed(0, 255, 0); // Green solid at end of setup
-}
-
-// -------------------------------------------------------------------------
-// Helper: Update CI-V address and notify dashboards
-// -------------------------------------------------------------------------
-void updateCivAddressAndNotify(uint8_t newCivAddr)
-{
-  civAddr = newCivAddr;
-  sendDashboardUpdate(nullptr);
-}
-
-// -------------------------------------------------------------------------
-// Helper Functions
-// -------------------------------------------------------------------------
-
-void setAtomLed(uint8_t r, uint8_t g, uint8_t b)
-{
-  atom_led.setPixelColor(0, atom_led.Color(r, g, b));
-  atom_led.show();
-}
-
-void setupButtonOutputs()
-{
-  pinMode(BUTTON_ANT_PIN, OUTPUT);
-  pinMode(BUTTON_CUP_PIN, OUTPUT);
-  pinMode(BUTTON_LUP_PIN, OUTPUT);
-  pinMode(BUTTON_AUTO_PIN, OUTPUT);
-  pinMode(BUTTON_CDN_PIN, OUTPUT);
-  pinMode(BUTTON_LDN_PIN, OUTPUT);
-  pinMode(BUTTON_TUNE_PIN, OUTPUT);
-
-  digitalWrite(BUTTON_ANT_PIN, LOW);
-  digitalWrite(BUTTON_CUP_PIN, LOW);
-  digitalWrite(BUTTON_LUP_PIN, LOW);
-  digitalWrite(BUTTON_AUTO_PIN, LOW);
-  digitalWrite(BUTTON_CDN_PIN, LOW);
-  digitalWrite(BUTTON_LDN_PIN, LOW);
-  digitalWrite(BUTTON_TUNE_PIN, LOW);
-}
-
-void setButtonOutput(const String &button)
-{
-  if (button == "button-ant")
-    digitalWrite(BUTTON_ANT_PIN, antState ? HIGH : LOW);
-  else if (button == "button-auto")
-    digitalWrite(BUTTON_AUTO_PIN, autoState ? HIGH : LOW);
-}
-
-bool initLittleFS()
-{
-  if (!LittleFS.begin())
-  {
-    Serial.println("Error: LittleFS mount failed");
-    return false;
-  }
-  Serial.println("LittleFS mounted successfully");
-  return true;
-}
-
-void loadLatchedStates()
-{
-  configPrefs.begin("config", false);
+  Serial.println("[DEBUG] setup() end");
   antState = configPrefs.getBool("ant", false);
   autoState = configPrefs.getBool("auto", false);
   configPrefs.end();
+
+  // Load CI-V model selection from NVS
+  civModelPrefs.begin("civmodel", false);
+  String civModel = civModelPrefs.getString("model", "991-994");
+  civModelPrefs.end();
+  // Optionally use civModel in your logic (e.g., set a global variable)
+
+  // Ensure dashboard state is sent after boot
+  sendDashboardUpdate(nullptr);
 }
 
 String processTemplate(String tmpl)
@@ -541,11 +456,23 @@ void onDashboardWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, Aw
     {
       StaticJsonDocument<128> doc;
       DeserializationError err = deserializeJson(doc, msg);
-      if (!err && doc.containsKey("set_device_number"))
+      if (!err)
       {
-        int newDeviceNumber = doc["set_device_number"];
-        setDeviceNumber(newDeviceNumber);
-        sendDashboardUpdate(client);
+        if (doc.containsKey("set_device_number"))
+        {
+          int newDeviceNumber = doc["set_device_number"];
+          setDeviceNumber(newDeviceNumber);
+          sendDashboardUpdate(client);
+        }
+        if (doc.containsKey("set_civ_model"))
+        {
+          String newModel = doc["set_civ_model"].as<String>();
+          civModelPrefs.begin("civmodel", false);
+          civModelPrefs.putString("model", newModel);
+          civModelPrefs.end();
+          // Optionally use newModel in your logic (e.g., set a global variable)
+          sendDashboardUpdate(client);
+        }
       }
     }
     else if (msg.startsWith("latch:"))
@@ -594,15 +521,29 @@ void sendDashboardUpdate(AsyncWebSocketClient *client)
   uint32_t sketchSize = ESP.getSketchSize();
   uint32_t flashFree = flashTotal - sketchSize;
 
-  unsigned long secs = millis() / 1000;
-  unsigned long mins = secs / 60;
-  unsigned long hrs = mins / 60;
-  unsigned long days = hrs / 24;
-  secs = secs % 60;
-  mins = mins % 60;
-  hrs = hrs % 24;
+  unsigned long totalSecs = millis() / 1000;
+  unsigned long days = totalSecs / 86400;
+  unsigned long hours = (totalSecs % 86400) / 3600;
+  unsigned long minutes = (totalSecs % 3600) / 60;
+  unsigned long seconds = totalSecs % 60;
+
+  // Correct calculation so hours, minutes, seconds are always <24, <60, <60
+  hours = (totalSecs / 3600) % 24;
+  minutes = (totalSecs / 60) % 60;
+  seconds = totalSecs % 60;
   char uptimeStr[64];
-  snprintf(uptimeStr, sizeof(uptimeStr), "%lu days %02lu:%02lu:%02lu", days, hrs, mins, secs);
+  if (days > 0)
+  {
+    snprintf(uptimeStr, sizeof(uptimeStr), "%lu days %02lu:%02lu:%02lu", days, hours, minutes, seconds);
+  }
+  else if (hours > 0)
+  {
+    snprintf(uptimeStr, sizeof(uptimeStr), "%02lu:%02lu:%02lu", hours, minutes, seconds);
+  }
+  else
+  {
+    snprintf(uptimeStr, sizeof(uptimeStr), "%02lu:%02lu", minutes, seconds);
+  }
 
   uint64_t chipid = ESP.getEfuseMac();
   String chipIdStr = String((uint32_t)(chipid >> 32), HEX) + String((uint32_t)chipid, HEX);
@@ -610,6 +551,13 @@ void sendDashboardUpdate(AsyncWebSocketClient *client)
 
   String antLabel = antState ? "ANT 2" : "ANT 1";
   String autoLabel = autoState ? "AUTO" : "SEMI";
+
+  // --- Read MCP23017 GPIOs for dashboard indicators ---
+  // LED should be gray (inactive) when output is LOW, colored when HIGH
+  bool tuningActive = (mcp.digitalRead(MCP_TUNING_PIN) == HIGH);
+  bool swrOk = (mcp.digitalRead(MCP_SWR_PIN) == HIGH);
+  Serial.printf("[DEBUG] MCP_TUNING_PIN: %d, tuningActive: %d\n", mcp.digitalRead(MCP_TUNING_PIN), tuningActive);
+  Serial.printf("[DEBUG] MCP_SWR_PIN: %d, swrOk: %d\n", mcp.digitalRead(MCP_SWR_PIN), swrOk);
 
   String dashboardData = "{";
   dashboardData += "\"type\":\"dashboard_update\",";
@@ -626,6 +574,10 @@ void sendDashboardUpdate(AsyncWebSocketClient *client)
   dashboardData += "\"flash_used\":" + String(sketchSize / 1024) + ",";
   dashboardData += "\"flash_free\":" + String(flashFree / 1024) + ",";
   dashboardData += "\"uptime\":\"" + String(uptimeStr) + "\",";
+  dashboardData += "\"uptime_days\":" + String(days) + ",";
+  dashboardData += "\"uptime_hours\":" + String(hours) + ",";
+  dashboardData += "\"uptime_minutes\":" + String(minutes) + ",";
+  dashboardData += "\"uptime_seconds\":" + String(seconds) + ",";
   dashboardData += "\"chip_id\":\"" + chipIdStr + "\",";
   dashboardData += "\"chip_rev\":" + String(ESP.getChipRevision()) + ",";
   dashboardData += "\"flash_size\":" + String(ESP.getFlashChipSize() / 1024) + ",";
@@ -641,13 +593,14 @@ void sendDashboardUpdate(AsyncWebSocketClient *client)
   // Always read device number from NVS for dashboard
   devicePrefs.begin("device", false);
   int deviceNumber = devicePrefs.getInt("deviceNumber", 1);
-  // Serial.printf("[NVS] sendDashboardUpdate: deviceNumber from NVS: %d\n", deviceNumber);
   devicePrefs.end();
   deviceNumber = constrain(deviceNumber, 1, 4);
   dashboardData += "\"device_number\":" + String(deviceNumber) + ",";
   dashboardData += "\"ota_active\":" + String(otaActive ? "true" : "false") + ",";
   dashboardData += "\"captive_portal_active\":" + String(captivePortalActive ? "true" : "false") + ",";
-  dashboardData += "\"remote_ws_connected\":" + String(remoteWSConnected ? "true" : "false");
+  dashboardData += "\"remote_ws_connected\":" + String(remoteWSConnected ? "true" : "false") + ",";
+  dashboardData += "\"tuning_active\":" + String(tuningActive ? "true" : "false") + ",";
+  dashboardData += "\"swr_ok\":" + String(swrOk ? "true" : "false");
   dashboardData += "}";
 
   if (client)
@@ -727,6 +680,57 @@ void setDeviceNumber(int newDeviceNumber)
   devicePrefs.end();
   civAddr = 0xB3 + newDeviceNumber;
   sendDashboardUpdate(nullptr);
+}
+
+void setAtomLed(uint8_t r, uint8_t g, uint8_t b)
+{
+  atom_led.setPixelColor(0, atom_led.Color(r, g, b));
+  atom_led.show();
+}
+
+void setButtonOutput(const String &button)
+{
+  if (button == "button-ant")
+    digitalWrite(BUTTON_ANT_PIN, antState ? HIGH : LOW);
+  else if (button == "button-auto")
+    digitalWrite(BUTTON_AUTO_PIN, autoState ? HIGH : LOW);
+}
+
+void setupButtonOutputs()
+{
+  pinMode(BUTTON_ANT_PIN, OUTPUT);
+  pinMode(BUTTON_CUP_PIN, OUTPUT);
+  pinMode(BUTTON_LUP_PIN, OUTPUT);
+  pinMode(BUTTON_AUTO_PIN, OUTPUT);
+  pinMode(BUTTON_CDN_PIN, OUTPUT);
+  pinMode(BUTTON_LDN_PIN, OUTPUT);
+  pinMode(BUTTON_TUNE_PIN, OUTPUT);
+
+  digitalWrite(BUTTON_ANT_PIN, LOW);
+  digitalWrite(BUTTON_CUP_PIN, LOW);
+  digitalWrite(BUTTON_LUP_PIN, LOW);
+  digitalWrite(BUTTON_AUTO_PIN, LOW);
+  digitalWrite(BUTTON_CDN_PIN, LOW);
+  digitalWrite(BUTTON_LDN_PIN, LOW);
+  digitalWrite(BUTTON_TUNE_PIN, LOW);
+}
+
+void onRemoteWsEvent(WStype_t type, uint8_t *payload, size_t length)
+{
+  // Track connection state
+  switch (type)
+  {
+  case WStype_CONNECTED:
+    remoteWSConnected = true;
+    break;
+  case WStype_DISCONNECTED:
+    remoteWSConnected = false;
+    break;
+  default:
+    break;
+  }
+  // Forward all remoteWS events to SMCIV for CI-V handling
+  smciv.handleWsClientEvent(type, payload, length);
 }
 
 void loop()
@@ -854,27 +858,8 @@ void loop()
   // --- Remote WebSocket client loop ---
   remoteWS.loop();
 
-  delay(1);
-}
-
-// --- Remote WebSocket event handler (file scope) ---
-void onRemoteWsEvent(WStype_t type, uint8_t *payload, size_t length)
-{
-  switch (type)
-  {
-  case WStype_CONNECTED:
-    remoteWSConnected = true;
-    break;
-  case WStype_DISCONNECTED:
-    remoteWSConnected = false;
-    break;
-  case WStype_TEXT:
-    break;
-  case WStype_ERROR:
-    break;
-  default:
-    break;
-  }
+  // SMCIV periodic tasks (if any)
+  smciv.loop();
 }
 
 String toHexUpper(const String &data)
@@ -889,4 +874,12 @@ String toHexUpper(const String &data)
     hexStr += " ";
   }
   return hexStr;
+}
+
+void loadLatchedStates()
+{
+  configPrefs.begin("config", false);
+  antState = configPrefs.getBool("ant", false);
+  autoState = configPrefs.getBool("auto", false);
+  configPrefs.end();
 }

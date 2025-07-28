@@ -86,6 +86,10 @@
         margin-right: 2px;
         border: 2px solid #222;
       }
+      .indicator-dot.gray {
+        background: #bbb;
+        border-color: #888;
+      }
       .indicator-dot.tuning {
         background: #e53935;
         border-color: #b71c1c;
@@ -351,7 +355,7 @@
         <a href="/" class="active">Dashboard</a>
         <!-- Remote tab removed -->
       </div>
-      <!-- Antenna Tuner Control button removed -->
+      <!-- ...existing code... -->
       <!-- Dashboard Grid -->
       <div class="dashboard-grid">
         <!-- Network Status Card -->
@@ -400,7 +404,7 @@
           <span class="metric-value" data-metric="mem-free">%FREE_HEAP% bytes</span>
         </div>
         <div class="metric-item">
-      <!-- Tuner Status card has been removed -->
+          <span class="metric-label">UpTime:</span>
           <span class="metric-value" data-metric="uptime">%UPTIME%</span>
         </div>
       </div>
@@ -436,6 +440,17 @@
           <h3 class="card-title">CI-V Information</h3>
         </div>
         <div class="metric-item">
+          <span class="metric-label">Model:</span>
+          <label style="margin-right:16px;">
+            <input type="radio" name="civ-model" id="civ-model-991" value="991-994">
+            991-994
+          </label>
+          <label>
+            <input type="radio" name="civ-model" id="civ-model-998" value="998">
+            998
+          </label>
+        </div>
+        <div class="metric-item">
           <span class="metric-label">Device Number:</span>
           <input class="metric-value civ-device-input" data-metric="device-number" type="number" min="1" max="4" value="1" />
         </div>
@@ -454,22 +469,22 @@
           </div>
           <div class="tuner-indicators-row">
             <div class="tuner-indicator left">
-              <span class="indicator-dot tuning"></span>
+              <span class="indicator-dot tuning gray" id="tuning-dot"></span>
               <span class="indicator-label">TUNING</span>
             </div>
             <div class="tuner-indicator right">
-              <span class="indicator-dot swr"></span>
+              <span class="indicator-dot swr gray" id="swr-dot"></span>
               <span class="indicator-label">SWR</span>
             </div>
           </div>
           <div class="tuner-grid" style="display:flex; flex-direction:column; align-items:center; width:100%;">
             <!-- Centered row: ANT 1 | AUTO -->
-            <div style="display:flex; flex-direction:row; justify-content:center; align-items:center; gap:64px; margin-bottom:32px;">
+            <div style="display:flex; flex-direction:row; justify-content:center; align-items:center; gap:32px; margin-bottom:18px;">
               <button id="button-ant" class="latch-btn">ANT 1</button>
               <button id="button-auto" class="latch-btn">AUTO</button>
             </div>
             <!-- 3x3 Tuner Control Grid, all buttons and chain links aligned, no lines -->
-            <div class="tuner-3x3-grid" style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:24px; justify-items:center; align-items:center;">
+            <div class="tuner-3x3-grid" style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:12px; justify-items:center; align-items:center;">
               <!-- Top row: C-UP | C-UP/L-UP chain | L-UP -->
               <button id="button-cup1" class="momentary-btn" style="grid-row:1; grid-column:1;" title="Increase Capacitance">C-UP</button>
               <button id="cup-lup-link-btn" aria-label="Toggle C-UP/L-UP Link" title="Increase both Capacitance and Inductance" style="grid-row:1; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
@@ -484,6 +499,7 @@
               <button id="cup-cdn-link-btn" aria-label="Toggle C-UP/C-DN Link" title="Toggle Capacitor from Input / Output" style="grid-row:2; grid-column:1; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
                 <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
                   <g transform="rotate(-45 22 22)">
+      <!-- ...existing code... -->
                     <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
                   </g>
                 </svg>
@@ -509,6 +525,22 @@
             </div>
           </div>
         </div>
+      <!-- Button Shortcuts Card as third dashboard card, to the right of CI-V Information and Tuner Control -->
+      <div class="dashboard-card button-shortcuts-card" style="min-width:340px; max-width:420px; box-sizing:border-box;">
+        <div class="card-header">
+          <div class="card-icon">⏩</div>
+          <h3 class="card-title">Button Shortcuts</h3>
+        </div>
+        <div style="text-align:left; margin-bottom:16px; font-size:1rem; color:#444;">
+          <div><strong>C-UP / C-DN</strong> - Change Capacitance.</div>
+          <div><strong>L-UP / L-DN</strong> - Change Inductance.</div>
+          <hr style="margin:10px 0;">
+          <div><strong>C-UP &amp; L-UP</strong> - Increase both C &amp; L Values.</div>
+          <div><strong>C-DN &amp; L-DN</strong> - Bypass Tuner.</div>
+          <div><strong>C-UP &amp; C-DN</strong> - Toggle Cap. Input -&gt; Output</div>
+          <div id="swr-beeper-shortcut"><strong>L-UP &amp; L-DN</strong> - Toggle SWR Beeper.</div>
+        </div>
+      </div>
       </div>
       </div>
 
@@ -519,6 +551,65 @@
     </div>
 
     <script>
+      // --- Hide Tuner/SWR indicators and AUTO/SEMI button for Model 998 ---
+      function updateTunerVisibilityForModel(model) {
+        // Hide/show Tuner/SWR indicators
+        const tuningDot = document.getElementById('tuning-dot');
+        const swrDot = document.getElementById('swr-dot');
+        const tuningLabel = tuningDot ? tuningDot.parentElement : null;
+        const swrLabel = swrDot ? swrDot.parentElement : null;
+        if (tuningDot) tuningDot.style.display = (model === '998') ? 'none' : '';
+        if (swrDot) swrDot.style.display = (model === '998') ? 'none' : '';
+        if (tuningLabel) tuningLabel.style.display = (model === '998') ? 'none' : '';
+        if (swrLabel) swrLabel.style.display = (model === '998') ? 'none' : '';
+        // Hide/show AUTO/SEMI button
+        const autoBtn = document.getElementById('button-auto');
+        if (autoBtn) autoBtn.style.display = (model === '998') ? 'none' : '';
+        // Hide/show right chain button (L-UP/L-DN link) for 998 model
+        const rightChainBtn = document.getElementById('lup-ldn-link-btn');
+        if (rightChainBtn) rightChainBtn.style.display = (model === '998') ? 'none' : '';
+        // Hide/show L-UP & L-DN shortcut text in Button Shortcuts card for 998 model
+        const swrBeeperShortcut = document.getElementById('swr-beeper-shortcut');
+        if (swrBeeperShortcut) swrBeeperShortcut.style.display = (model === '998') ? 'none' : '';
+      }
+      function getCurrentCivModel() {
+        return document.getElementById('civ-model-998').checked ? '998' : '991-994';
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initial visibility now handled by backend updateDashboard()
+        document.getElementById('civ-model-991').addEventListener('change', function() {
+          if (this.checked) updateTunerVisibilityForModel('991-994');
+        });
+        document.getElementById('civ-model-998').addEventListener('change', function() {
+          if (this.checked) updateTunerVisibilityForModel('998');
+        });
+      });
+      // --- CI-V Model Radio Button Persistence and WebSocket ---
+      function setCivModelRadioFromStorage() {
+        const storedModel = localStorage.getItem('civModel') || '991-994';
+        document.getElementById('civ-model-991').checked = (storedModel === '991-994');
+        document.getElementById('civ-model-998').checked = (storedModel === '998');
+      }
+      function sendCivModelToBackend(model) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ set_civ_model: model }));
+        }
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        setCivModelRadioFromStorage();
+        document.getElementById('civ-model-991').addEventListener('change', function() {
+          if (this.checked) {
+            localStorage.setItem('civModel', '991-994');
+            sendCivModelToBackend('991-994');
+          }
+        });
+        document.getElementById('civ-model-998').addEventListener('change', function() {
+          if (this.checked) {
+            localStorage.setItem('civModel', '998');
+            sendCivModelToBackend('998');
+          }
+        });
+      });
       // --- Chain Link Interactivity for C-UP/L-UP ---
       let cupLupLinked = false;
         function setCupLupLinkColor(blue) {
@@ -732,16 +823,15 @@
         }
         // Do NOT reset momentary button states for C-UP, L-UP, C-DN, L-DN, TUNE on WS update
         // Their state is now managed only by user interaction
-        // --- Optionally update TUNING/SWR indicators if backend provides fields ---
-        // Example: data.tuning_active, data.swr_ok (add to JSON if needed)
-        // const tuningDot = document.querySelector('.indicator-dot.tuning');
-        // if (tuningDot && typeof data.tuning_active !== 'undefined') {
-        //   tuningDot.style.background = data.tuning_active ? '#e53935' : '#bbb';
-        // }
-        // const swrDot = document.querySelector('.indicator-dot.swr');
-        // if (swrDot && typeof data.swr_ok !== 'undefined') {
-        //   swrDot.style.background = data.swr_ok ? '#388e3c' : '#bbb';
-        // }
+        // --- Update TUNING/SWR indicators based on backend fields ---
+        const tuningDot = document.getElementById('tuning-dot');
+        if (tuningDot) {
+          tuningDot.className = 'indicator-dot tuning' + ((typeof data.tuning_active !== 'undefined' && data.tuning_active) ? '' : ' gray');
+        }
+        const swrDot = document.getElementById('swr-dot');
+        if (swrDot) {
+          swrDot.className = 'indicator-dot swr' + ((typeof data.swr_ok !== 'undefined' && data.swr_ok) ? '' : ' gray');
+        }
         // Update time display
         updateElementIfExists('#current-time', data.time || 'TIME_NOT_SET');
         
@@ -752,7 +842,17 @@
         updateElementIfExists('[data-metric="flash-total"]', `${data.flash_total || 0} KB`);
         updateElementIfExists('[data-metric="flash-used"]', `${data.flash_used || 0} KB`);
         updateElementIfExists('[data-metric="flash-free"]', `${data.flash_free || 0} KB`);
-        updateElementIfExists('[data-metric="uptime"]', data.uptime || 'Unknown');
+        // Custom uptime formatting: always use 0 if undefined, never show 'undefined:undefined'
+        // Only use backend value for uptime, no ticking timer
+        let d = (typeof data.uptime_days === 'number') ? data.uptime_days : 0;
+        let h = (typeof data.uptime_hours === 'number') ? data.uptime_hours : 0;
+        let m = (typeof data.uptime_minutes === 'number') ? data.uptime_minutes : 0;
+        let s = (typeof data.uptime_seconds === 'number') ? data.uptime_seconds : 0;
+        let uptimeStr = '';
+        if (d > 0) uptimeStr += d + ' days ';
+        if (d > 0 || h > 0) uptimeStr += String(h).padStart(2, '0') + ':';
+        uptimeStr += String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        updateElementIfExists('[data-metric="uptime"]', uptimeStr);
         updateElementIfExists('[data-metric="chip-id"]', data.chip_id || 'Unknown');
         updateElementIfExists('[data-metric="chip-rev"]', data.chip_rev || 'Unknown');
         updateElementIfExists('[data-metric="cpu-freq"]', `${data.cpu_freq || 0} MHz`);
@@ -779,6 +879,17 @@
         if (civHex.length < 2) civHex = '0' + civHex;
         let civDisplay = '0x' + civHex;
         updateElementIfExists('[data-metric="civ-address"]', civDisplay);
+
+        // --- Update CI-V Model radio buttons and dashboard visibility from backend ---
+        if (typeof data.civ_model !== 'undefined') {
+          const civ991 = document.getElementById('civ-model-991');
+          const civ998 = document.getElementById('civ-model-998');
+          if (civ991 && civ998) {
+            civ991.checked = (data.civ_model === '991-994');
+            civ998.checked = (data.civ_model === '998');
+            updateTunerVisibilityForModel(data.civ_model);
+          }
+        }
 
 // Remove duplicate DOMContentLoaded above.
 
