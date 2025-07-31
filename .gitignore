@@ -3,3 +3,7 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Documentation files (development/deployment notes)
+REFACTORING_SUMMARY.md
+DEPLOYMENT_GUIDE.md
