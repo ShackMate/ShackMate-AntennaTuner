@@ -24,11 +24,11 @@
       }
       .dashboard-container {
         max-width: 1200px;
-        margin: 40px auto 40px auto;
+        margin: 10px auto 10px auto; /* Reduced top/bottom margin */
         background: #fff;
         border-radius: 22px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-        padding: 36px 32px 32px 32px;
+        padding: 18px 32px 18px 32px; /* Reduced padding */
         min-height: 80vh;
       }
       .header {
@@ -44,7 +44,7 @@
         color: #7b868c;
         font-size: 1.35em;
         margin-top: 0.1em;
-        margin-bottom: 1.2em;
+        margin-bottom: 0.5em; /* Reduced margin below version label */
         font-weight: 400;
         letter-spacing: 0.01em;
         text-shadow: none;
@@ -64,8 +64,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin: 10px 0 8px 0;
-        padding: 0 8px;
+        margin: 6px 0 6px 0;
+        padding: 0 6px;
       }
       .tuner-indicator {
         display: flex;
@@ -109,16 +109,16 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr auto 1fr;
-        gap: 18px 32px;
+        gap: 12px 28px;
         justify-items: center;
         align-items: center;
-        margin: 18px 0 8px 0;
+        margin: 12px 0 6px 0;
         position: relative;
       }
       .tuner-grid button {
-        min-width: 60px;
-        min-height: 60px;
-        font-size: 1.18em;
+        min-width: 55px;
+        min-height: 55px;
+        font-size: 1.05em;
         border-radius: 8px;
         border: 2px solid #888;
         background: #f4f4f4;
@@ -133,23 +133,61 @@
         justify-self: center;
         align-self: center;
       }
-      .tuner-grid button:active {
+      .tuner-grid button:active:not(.momentary-btn) {
         background: #e0e0e0;
         box-shadow: none;
       }
       /* When both linked buttons are pressed together, show a stronger highlight */
+      .momentary-btn {
+        min-width: 55px;
+        min-height: 55px;
+        font-size: 1.05em;
+        border-radius: 8px;
+        border: 2px solid #888;
+        background: #f4f4f4;
+        box-shadow: 1px 1px 3px #bbb;
+        transition: none; /* Disable all transitions */
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
       .momentary-btn.active {
         background: #c8f7c5 !important;
         border-color: #43a047 !important;
         box-shadow: 0 0 0 2px #43a047, 1px 1px 3px #bbb !important;
+        transition: none !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        -webkit-touch-callout: none !important;
+      }
+      /* Completely disable any browser default active/focus states */
+      .momentary-btn.active:active,
+      .momentary-btn.active:focus,
+      .momentary-btn.active:hover,
+      .momentary-btn.active:visited,
+      .momentary-btn.active:link,
+      .momentary-btn.active:any-link {
+        background: #c8f7c5 !important;
+        border-color: #43a047 !important;
+        box-shadow: 0 0 0 2px #43a047, 1px 1px 3px #bbb !important;
+        transition: none !important;
+        outline: none !important;
+        color: inherit !important;
+        text-decoration: none !important;
+      }
+      .momentary-btn:active:not(.active) {
+        background: #e0e0e0;
+        box-shadow: none;
       }
       .latch-btn.active {
         background: #cce5ff;
         border-color: #3399ff;
-      }
-      .momentary-btn:active {
-        background: #ffe5cc;
-        border-color: #ff9933;
       }
       
       /* Removed duplicate .header rule that set color: #fff; and text-shadow */
@@ -160,6 +198,16 @@
         font-size: 1.1em;
         margin-bottom: 0.8em;
         opacity: 0.9;
+      }
+
+      .output-status {
+        display: block;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        margin-top: 0.25em;
+        min-height: 1.1em;
+        letter-spacing: 0.03em;
       }
       
       .tabs {
@@ -200,12 +248,12 @@
       
       .dashboard-card {
         background: #f9fbfd;
-        border-radius: 18px;
-        padding: 28px 28px 22px 28px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+        border-radius: 12px;
+        padding: 12px 16px 10px 16px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.08);
         border: none;
         position: relative;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         transition: box-shadow 0.2s, transform 0.2s;
         overflow: visible;
       }
@@ -228,8 +276,8 @@
       .card-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
+        gap: 8px;
+        margin-bottom: 8px;
         padding-bottom: 0;
         border-bottom: none;
       }
@@ -286,9 +334,9 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin: 8px 0 8px 0;
-        padding: 0.4em 0 0.4em 0.2em;
-        font-size: 0.98em;
+        margin: 4px 0 4px 0;
+        padding: 0.2em 0 0.2em 0.1em;
+        font-size: 0.95em;
       }
       .metric-label {
         font-weight: 600;
@@ -355,7 +403,6 @@
         <a href="/" class="active">Dashboard</a>
         <!-- Remote tab removed -->
       </div>
-      <!-- ...existing code... -->
       <!-- Dashboard Grid -->
       <div class="dashboard-grid">
         <!-- Network Status Card -->
@@ -462,12 +509,12 @@
       </div>
 
       <!-- Tuner Control Card -->
-      <div class="dashboard-card">
+      <div class="dashboard-card" style="height: fit-content;">
           <div class="card-header">
             <div class="card-icon">🎚️</div>
             <h3 class="card-title">Tuner Control</h3>
           </div>
-          <div class="tuner-indicators-row">
+          <div class="tuner-indicators-row" style="display: none;">
             <div class="tuner-indicator left">
               <span class="indicator-dot tuning gray" id="tuning-dot"></span>
               <span class="indicator-label">TUNING</span>
@@ -477,71 +524,41 @@
               <span class="indicator-label">SWR</span>
             </div>
           </div>
-          <div class="tuner-grid" style="display:flex; flex-direction:column; align-items:center; width:100%;">
-            <!-- Centered row: ANT 1 | AUTO -->
-            <div style="display:flex; flex-direction:row; justify-content:center; align-items:center; gap:32px; margin-bottom:18px;">
-              <button id="button-ant" class="latch-btn">ANT 1</button>
-              <button id="button-auto" class="latch-btn">AUTO</button>
-            </div>
-            <!-- 3x3 Tuner Control Grid, all buttons and chain links aligned, no lines -->
-            <div class="tuner-3x3-grid" style="display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:12px; justify-items:center; align-items:center;">
-              <!-- Top row: C-UP | C-UP/L-UP chain | L-UP -->
-              <button id="button-cup1" class="momentary-btn" style="grid-row:1; grid-column:1;" title="Increase Capacitance">C-UP</button>
-              <button id="cup-lup-link-btn" aria-label="Toggle C-UP/L-UP Link" title="Increase both Capacitance and Inductance" style="grid-row:1; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
-                <svg id="cup-lup-link" class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
-                  <g transform="rotate(45 22 22)">
-                    <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
-                  </g>
-                </svg>
-              </button>
-              <button id="button-lup1" class="momentary-btn" style="grid-row:1; grid-column:3;" title="Increase Inductance">L-UP</button>
-              <!-- Middle row: C-UP/C-DN chain | TUNE | L-UP/L-DN chain -->
-              <button id="cup-cdn-link-btn" aria-label="Toggle C-UP/C-DN Link" title="Toggle Capacitor from Input / Output" style="grid-row:2; grid-column:1; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
-                <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
-                  <g transform="rotate(-45 22 22)">
-      <!-- ...existing code... -->
-                    <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
-                  </g>
-                </svg>
-              </button>
-              <button id="button-tune" class="momentary-btn tune-center" style="grid-row:2; grid-column:2;">TUNE</button>
-              <button id="lup-ldn-link-btn" aria-label="Toggle L-UP/L-DN Link" title="Toggle SWR Beeper" style="grid-row:2; grid-column:3; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
-                <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
-                  <g transform="rotate(-45 22 22)">
-                    <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
-                  </g>
-                </svg>
-              </button>
-              <!-- Bottom row: C-DN | C-DN/L-DN chain | L-DN -->
-              <button id="button-cup2" class="momentary-btn" style="grid-row:3; grid-column:1;" title="Decrease Capacitance">C-DN</button>
-              <button id="cdn-ldn-link-btn" aria-label="Toggle C-DN/L-DN Link" title="Bypass Tuner" style="grid-row:3; grid-column:2; background:none; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px;">
-                <svg class="tuner-link-svg" style="width:44px; height:44px; pointer-events:none; display:block;" viewBox="0 0 44 44">
-                  <g transform="rotate(45 22 22)">
-                    <text x="22" y="27" text-anchor="middle" font-size="28" font-family="Arial" fill="#e53935" alignment-baseline="middle">🔗</text>
-                  </g>
-                </svg>
-              </button>
-              <button id="button-lup2" class="momentary-btn" style="grid-row:3; grid-column:3;" title="Decrease Inductance">L-DN</button>
+          <div style="display: flex; justify-content: center; align-items: center; width: 100%; padding: 8px 0;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+              <!-- Top row: C-UP | ANT | L-UP -->
+              <div style="display: flex; justify-content: center; align-items: center; gap: 24px;">
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <button id="button-cup1" class="momentary-btn" title="Increase Capacitance">C-UP</button>
+                  <div class="output-status" id="status-cup1"></div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <button id="button-ant" class="momentary-btn">ANT</button>
+                  <div class="output-status" id="status-ant"></div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <button id="button-lup1" class="momentary-btn" title="Increase Inductance">L-UP</button>
+                  <div class="output-status" id="status-lup1"></div>
+                </div>
+              </div>
+              <!-- Bottom row: C-DN | TUNE | L-DN -->
+              <div style="display: flex; justify-content: center; align-items: center; gap: 24px;">
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <button id="button-cdn" class="momentary-btn" title="Decrease Capacitance">C-DN</button>
+                  <div class="output-status" id="status-cdn"></div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <button id="button-tune" class="momentary-btn tune-center">TUNE</button>
+                  <div class="output-status" id="status-tune"></div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <button id="button-ldn" class="momentary-btn" title="Decrease Inductance">L-DN</button>
+                  <div class="output-status" id="status-ldn"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      <!-- Button Shortcuts Card as third dashboard card, to the right of CI-V Information and Tuner Control -->
-      <div class="dashboard-card button-shortcuts-card" style="min-width:340px; max-width:420px; box-sizing:border-box;">
-        <div class="card-header">
-          <div class="card-icon">⏩</div>
-          <h3 class="card-title">Button Shortcuts</h3>
-        </div>
-        <div style="text-align:left; margin-bottom:16px; font-size:1rem; color:#444;">
-          <div><strong>C-UP / C-DN</strong> - Change Capacitance.</div>
-          <div><strong>L-UP / L-DN</strong> - Change Inductance.</div>
-          <hr style="margin:10px 0;">
-          <div><strong>C-UP &amp; L-UP</strong> - Increase both C &amp; L Values.</div>
-          <div><strong>C-DN &amp; L-DN</strong> - Bypass Tuner.</div>
-          <div><strong>C-UP &amp; C-DN</strong> - Toggle Cap. Input -&gt; Output</div>
-          <div id="swr-beeper-shortcut"><strong>L-UP &amp; L-DN</strong> - Toggle SWR Beeper.</div>
-        </div>
-      </div>
-      </div>
       </div>
 
 
@@ -551,515 +568,451 @@
     </div>
 
     <script>
-      // --- Hide Tuner/SWR indicators and AUTO/SEMI button for Model 998 ---
-      function updateTunerVisibilityForModel(model) {
-        // Hide/show Tuner/SWR indicators
-        const tuningDot = document.getElementById('tuning-dot');
-        const swrDot = document.getElementById('swr-dot');
-        const tuningLabel = tuningDot ? tuningDot.parentElement : null;
-        const swrLabel = swrDot ? swrDot.parentElement : null;
-        if (tuningDot) tuningDot.style.display = (model === '998') ? 'none' : '';
-        if (swrDot) swrDot.style.display = (model === '998') ? 'none' : '';
-        if (tuningLabel) tuningLabel.style.display = (model === '998') ? 'none' : '';
-        if (swrLabel) swrLabel.style.display = (model === '998') ? 'none' : '';
-        // Hide/show AUTO/SEMI button
-        const autoBtn = document.getElementById('button-auto');
-        if (autoBtn) autoBtn.style.display = (model === '998') ? 'none' : '';
-        // Hide/show right chain button (L-UP/L-DN link) for 998 model
-        const rightChainBtn = document.getElementById('lup-ldn-link-btn');
-        if (rightChainBtn) rightChainBtn.style.display = (model === '998') ? 'none' : '';
-        // Hide/show L-UP & L-DN shortcut text in Button Shortcuts card for 998 model
-        const swrBeeperShortcut = document.getElementById('swr-beeper-shortcut');
-        if (swrBeeperShortcut) swrBeeperShortcut.style.display = (model === '998') ? 'none' : '';
+// --- Hide Tuner/SWR indicators and AUTO/SEMI button for Model 998 ---
+function updateTunerVisibilityForModel(model) {
+  var is998 = model === '998';
+  var tuningDot = document.getElementById('tuning-dot');
+  var swrDot = document.getElementById('swr-dot');
+  var tunerGrid = document.querySelector('.tuner-grid');
+  var autoBtn = document.getElementById('button-auto');
+  if (tuningDot) tuningDot.style.display = is998 ? 'none' : '';
+  if (swrDot) swrDot.style.display = is998 ? 'none' : '';
+  if (autoBtn) autoBtn.style.display = is998 ? 'none' : '';
+  if (tunerGrid) tunerGrid.style.display = '';
+}
+function updateElementIfExists(selector, value) {
+  const element = document.querySelector(selector);
+  if (element) {
+    element.textContent = value;
+  }
+}
+function updateSystemStatus(data) {
+  const statusElements = document.querySelectorAll('.status-indicator');
+  statusElements.forEach(indicator => {
+    if (data.ota_active) {
+      indicator.className = 'status-indicator status-warning';
+    } else if (data.captive_portal_active) {
+      indicator.className = 'status-indicator status-offline';
+    } else {
+      indicator.className = 'status-indicator status-online';
+    }
+  });
+}
+function getCurrentCivModel() {
+  return document.getElementById('civ-model-998').checked ? '998' : '991-994';
+}
+function setCivModelRadioFromStorage() {
+  // Don't set from localStorage anymore - will be set from firmware data
+  // The firmware will send the correct model via WebSocket updateDashboard
+}
+function sendCivModelToBackend(model) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ set_civ_model: model }));
+    console.log('Sent model change to backend:', model);
+  } else {
+    console.log('WebSocket not ready, queuing model change:', model);
+    // Store the pending model change
+    window.pendingModelChange = model;
+    // Try to send it when connection is ready
+    setTimeout(function() {
+      if (ws && ws.readyState === WebSocket.OPEN && window.pendingModelChange) {
+        ws.send(JSON.stringify({ set_civ_model: window.pendingModelChange }));
+        console.log('Sent queued model change:', window.pendingModelChange);
+        window.pendingModelChange = null;
       }
-      function getCurrentCivModel() {
-        return document.getElementById('civ-model-998').checked ? '998' : '991-994';
+    }, 1000);
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  // Don't set default model selection here - wait for firmware data
+  // This prevents overriding the actual stored model
+  
+  document.getElementById('civ-model-991').addEventListener('change', function() {
+    if (this.checked) {
+      updateTunerVisibilityForModel('991-994');
+      sendCivModelToBackend('991-994');
+    }
+  });
+  document.getElementById('civ-model-998').addEventListener('change', function() {
+    if (this.checked) {
+      updateTunerVisibilityForModel('998');
+      sendCivModelToBackend('998');
+    }
+  });
+});
+
+// --- Add Serial Message Logic for 6 Tuner Buttons with deduplication ---
+document.addEventListener('DOMContentLoaded', function() {
+  // List of button IDs and corresponding status label IDs
+  const buttonIds = [
+    'button-cup1', 'button-cdn', 'button-lup1', 'button-ldn', 'button-ant', 'button-tune'
+  ];
+  // Track the last output state per button to prevent repeated updates
+  const lastOutputState = {};
+  buttonIds.forEach(id => {
+    const btn = document.getElementById(id);
+    const statusId = 'status-' + id.replace('button-', '');
+    let statusDiv = document.getElementById(statusId);
+    if (!btn) return;
+    if (!statusDiv) {
+      statusDiv = document.createElement('div');
+      statusDiv.id = statusId;
+      statusDiv.className = 'output-status';
+      btn.insertAdjacentElement('afterend', statusDiv);
+    }
+
+    // Pressed
+    function pressHandler() {
+      // For ANT button, only act as momentary if it's in momentary mode
+      if (id === 'button-ant' && !window.antButtonMomentary) {
+        return; // Let the latch handler deal with it
       }
-      document.addEventListener('DOMContentLoaded', function() {
-        // Initial visibility now handled by backend updateDashboard()
-        document.getElementById('civ-model-991').addEventListener('change', function() {
-          if (this.checked) updateTunerVisibilityForModel('991-994');
-        });
-        document.getElementById('civ-model-998').addEventListener('change', function() {
-          if (this.checked) updateTunerVisibilityForModel('998');
-        });
-      });
-      // --- CI-V Model Radio Button Persistence and WebSocket ---
-      function setCivModelRadioFromStorage() {
-        const storedModel = localStorage.getItem('civModel') || '991-994';
-        document.getElementById('civ-model-991').checked = (storedModel === '991-994');
-        document.getElementById('civ-model-998').checked = (storedModel === '998');
+      
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(`momentary:${id}:on`);
       }
-      function sendCivModelToBackend(model) {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ set_civ_model: model }));
-        }
+      btn.classList.add('active');
+      // Force the green styling via inline styles to override any browser defaults
+      btn.style.setProperty('background', '#c8f7c5', 'important');
+      btn.style.setProperty('border-color', '#43a047', 'important');
+      btn.style.setProperty('box-shadow', '0 0 0 2px #43a047, 1px 1px 3px #bbb', 'important');
+      btn.style.setProperty('transition', 'none', 'important');
+    }
+
+    // Released
+    function releaseHandler() {
+      // For ANT button, only act as momentary if it's in momentary mode
+      if (id === 'button-ant' && !window.antButtonMomentary) {
+        return; // Let the latch handler deal with it
       }
-      document.addEventListener('DOMContentLoaded', function() {
-        setCivModelRadioFromStorage();
-        document.getElementById('civ-model-991').addEventListener('change', function() {
-          if (this.checked) {
-            localStorage.setItem('civModel', '991-994');
-            sendCivModelToBackend('991-994');
-          }
-        });
-        document.getElementById('civ-model-998').addEventListener('change', function() {
-          if (this.checked) {
-            localStorage.setItem('civModel', '998');
-            sendCivModelToBackend('998');
-          }
-        });
-      });
-      // --- Chain Link Interactivity for C-UP/L-UP ---
-      let cupLupLinked = false;
-        function setCupLupLinkColor(blue) {
-          // Optionally update the dashed line color if you want to visually indicate the link state on the main line
-          const mainLine = document.getElementById('cup-lup-link-line');
-          if (mainLine) {
-            mainLine.setAttribute('stroke', blue ? '#2196f3' : '#ccc');
-          }
-        }
-      document.addEventListener('DOMContentLoaded', function() {
-        // --- Chain Link Button Toggle Logic ---
-        const chainLinks = [
-          { id: 'cup-lup-link-btn', state: false },
-          { id: 'cup-cdn-link-btn', state: false },
-          { id: 'lup-ldn-link-btn', state: false },
-          { id: 'cdn-ldn-link-btn', state: false }
-        ];
-        // Map chain buttons to their affected tuner buttons
-        const chainMap = {
-          'cup-lup-link-btn': ['button-cup1', 'button-lup1'], // Top row
-          'cup-cdn-link-btn': ['button-cup1', 'button-cup2'], // Left column (C-UP, C-DN)
-          'lup-ldn-link-btn': ['button-lup1', 'button-lup2'], // Right column (L-UP, L-DN)
-          'cdn-ldn-link-btn': ['button-cup2', 'button-lup2']  // Bottom row
-        };
-        chainLinks.forEach(link => {
-          const btn = document.getElementById(link.id);
-          if (!btn) return;
-          btn.classList.add('chain-link-btn');
-          btn.addEventListener('click', function(e) {
-            if (link.state) {
-              // If already active, deactivate this chain button and its highlights
-              link.state = false;
-              btn.classList.remove('active');
-              (chainMap[link.id] || []).forEach(id => {
-                const b = document.getElementById(id);
-                if (b) b.classList.remove('chain-highlight');
-              });
-            } else {
-              // Deactivate all other chain buttons and highlights
-              chainLinks.forEach(otherLink => {
-                const otherBtn = document.getElementById(otherLink.id);
-                otherLink.state = false;
-                if (otherBtn) otherBtn.classList.remove('active');
-                (chainMap[otherLink.id] || []).forEach(id => {
-                  const b = document.getElementById(id);
-                  if (b) b.classList.remove('chain-highlight');
-                });
-              });
-              // Activate this chain button and its highlights
-              link.state = true;
-              btn.classList.add('active');
-              (chainMap[link.id] || []).forEach(id => {
-                const b = document.getElementById(id);
-                if (b) b.classList.add('chain-highlight');
-              });
-            }
-            e.preventDefault();
-            e.stopPropagation();
-          });
-        });
-        // --- Link logic for all chain buttons and their mapped tuner buttons ---
-        const chainLinkLogic = [
-          { chainId: 'cup-lup-link-btn', btns: ['button-cup1', 'button-lup1'] },
-          { chainId: 'cup-cdn-link-btn', btns: ['button-cup1', 'button-cup2'] },
-          { chainId: 'lup-ldn-link-btn', btns: ['button-lup1', 'button-lup2'] },
-          { chainId: 'cdn-ldn-link-btn', btns: ['button-cup2', 'button-lup2'] }
-        ];
-        chainLinkLogic.forEach(link => {
-          const chainBtn = document.getElementById(link.chainId);
-          const btnA = document.getElementById(link.btns[0]);
-          const btnB = document.getElementById(link.btns[1]);
-          if (!chainBtn || !btnA || !btnB) return;
-          // Track last sent state for each button to suppress duplicate sends
-          let lastSentState = { [btnA.id]: null, [btnB.id]: null };
-          function setLinkedActive(active) {
-            btnA.classList.toggle('active', active);
-            btnB.classList.toggle('active', active);
-            if (active) {
-              btnA.classList.add('linked-pressed');
-              btnB.classList.add('linked-pressed');
-            } else {
-              btnA.classList.remove('linked-pressed');
-              btnB.classList.remove('linked-pressed');
-            }
-          }
-          function sendMomentary(id, state) {
-            if (lastSentState[id] !== state) {
-              lastSentState[id] = state;
-              if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(`momentary:${id}:${state}`);
-              }
-            }
-          }
-          function handleLinkedDown(e) {
-            const linked = chainBtn.classList.contains('active');
-            if (linked) {
-              setLinkedActive(true);
-              btnA.classList.add('active');
-              btnB.classList.add('active');
-              // Send only one message for the event (one-shot, no duplicates)
-              if (e.target === btnA) {
-                sendMomentary(btnA.id, 'on');
-              } else if (e.target === btnB) {
-                sendMomentary(btnB.id, 'on');
-              }
-            } else {
-              if (e.target === btnA) {
-                btnA.classList.add('active');
-                sendMomentary(btnA.id, 'on');
-              } else if (e.target === btnB) {
-                btnB.classList.add('active');
-                sendMomentary(btnB.id, 'on');
-              }
-            }
-          }
-          function handleLinkedUp(e) {
-            const linked = chainBtn.classList.contains('active');
-            if (linked) {
-              setLinkedActive(false);
-              btnA.classList.remove('active');
-              btnB.classList.remove('active');
-              // Send only one message for the event (one-shot, no duplicates)
-              if (e.target === btnA) {
-                sendMomentary(btnA.id, 'off');
-              } else if (e.target === btnB) {
-                sendMomentary(btnB.id, 'off');
-              }
-            } else {
-              if (e.target === btnA) {
-                btnA.classList.remove('active');
-                sendMomentary(btnA.id, 'off');
-              } else if (e.target === btnB) {
-                btnB.classList.remove('active');
-                sendMomentary(btnB.id, 'off');
-              }
-            }
-          }
-          [btnA, btnB].forEach(btn => {
-            btn.addEventListener('mousedown', handleLinkedDown);
-            btn.addEventListener('touchstart', handleLinkedDown);
-            btn.addEventListener('mouseup', handleLinkedUp);
-            btn.addEventListener('mouseleave', handleLinkedUp);
-            btn.addEventListener('touchend', handleLinkedUp);
-          });
-        });
-      });
-      // WebSocket connection for real-time updates
-      let ws = null;
-      let reconnectAttempts = 0;
-      const maxReconnectAttempts = 5;
-      const reconnectDelay = 3000; // 3 seconds
-
-      function connectWebSocket() {
-        try {
-          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          const wsUrl = `${protocol}//${window.location.host}/dashboard-ws`;
-          
-          ws = new WebSocket(wsUrl);
-          
-          ws.onopen = function() {
-            console.log('Dashboard WebSocket connected');
-            reconnectAttempts = 0;
-            // Request initial update
-            ws.send('request_update');
-          };
-          
-          ws.onmessage = function(event) {
-            try {
-              const data = JSON.parse(event.data);
-              if (data.type === 'dashboard_update') {
-                updateDashboard(data);
-              }
-            } catch (e) {
-              console.error('Error parsing WebSocket message:', e);
-            }
-          };
-          
-          ws.onclose = function() {
-            console.log('Dashboard WebSocket disconnected');
-            ws = null;
-            // Attempt to reconnect
-            if (reconnectAttempts < maxReconnectAttempts) {
-              reconnectAttempts++;
-              setTimeout(connectWebSocket, reconnectDelay);
-            }
-          };
-          
-          ws.onerror = function(error) {
-            console.error('Dashboard WebSocket error:', error);
-          };
-        } catch (e) {
-          console.error('Error creating WebSocket connection:', e);
-        }
+      
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(`momentary:${id}:off`);
       }
+      btn.classList.remove('active');
+      // Clear inline styles to let CSS take over
+      btn.style.removeProperty('background');
+      btn.style.removeProperty('border-color');
+      btn.style.removeProperty('box-shadow');
+      btn.style.removeProperty('transition');
+    }
 
-      function updateDashboard(data) {
-        // --- Tuner Control Card: Update latch button states and labels ---
-        // ANT button
-        const antBtn = document.getElementById('button-ant');
-        if (antBtn) {
-          const isAnt2 = (data.ant_state && data.ant_state.trim() === 'ANT 2');
-          antBtn.classList.toggle('active', isAnt2);
-          antBtn.textContent = isAnt2 ? 'ANT 2' : 'ANT 1';
-        }
-        // AUTO button
-        const autoBtn = document.getElementById('button-auto');
-        if (autoBtn) {
-          const isAuto = (data.auto_state && data.auto_state.trim() === 'AUTO');
-          autoBtn.classList.toggle('active', isAuto);
-          autoBtn.textContent = isAuto ? 'AUTO' : 'SEMI';
-        }
-        // Do NOT reset momentary button states for C-UP, L-UP, C-DN, L-DN, TUNE on WS update
-        // Their state is now managed only by user interaction
-        // --- Update TUNING/SWR indicators based on backend fields ---
-        const tuningDot = document.getElementById('tuning-dot');
-        if (tuningDot) {
-          tuningDot.className = 'indicator-dot tuning' + ((typeof data.tuning_active !== 'undefined' && data.tuning_active) ? '' : ' gray');
-        }
-        const swrDot = document.getElementById('swr-dot');
-        if (swrDot) {
-          swrDot.className = 'indicator-dot swr' + ((typeof data.swr_ok !== 'undefined' && data.swr_ok) ? '' : ' gray');
-        }
-        // Update time display
-        updateElementIfExists('#current-time', data.time || 'TIME_NOT_SET');
-        
-        // Update system metrics
-        updateElementIfExists('[data-metric="mem-total"]', `${data.mem_total || 0} KB`);
-        updateElementIfExists('[data-metric="mem-used"]', `${data.mem_used || 0} KB`);
-        updateElementIfExists('[data-metric="mem-free"]', `${data.mem_free || 0} KB`);
-        updateElementIfExists('[data-metric="flash-total"]', `${data.flash_total || 0} KB`);
-        updateElementIfExists('[data-metric="flash-used"]', `${data.flash_used || 0} KB`);
-        updateElementIfExists('[data-metric="flash-free"]', `${data.flash_free || 0} KB`);
-        // Custom uptime formatting: always use 0 if undefined, never show 'undefined:undefined'
-        // Only use backend value for uptime, no ticking timer
-        let d = (typeof data.uptime_days === 'number') ? data.uptime_days : 0;
-        let h = (typeof data.uptime_hours === 'number') ? data.uptime_hours : 0;
-        let m = (typeof data.uptime_minutes === 'number') ? data.uptime_minutes : 0;
-        let s = (typeof data.uptime_seconds === 'number') ? data.uptime_seconds : 0;
-        let uptimeStr = '';
-        if (d > 0) uptimeStr += d + ' days ';
-        if (d > 0 || h > 0) uptimeStr += String(h).padStart(2, '0') + ':';
-        uptimeStr += String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-        updateElementIfExists('[data-metric="uptime"]', uptimeStr);
-        updateElementIfExists('[data-metric="chip-id"]', data.chip_id || 'Unknown');
-        updateElementIfExists('[data-metric="chip-rev"]', data.chip_rev || 'Unknown');
-        updateElementIfExists('[data-metric="cpu-freq"]', `${data.cpu_freq || 0} MHz`);
-        updateElementIfExists('[data-metric="psram-size"]', `${data.psram_size || 0} KB`);
-        
-        // Update antenna states
-        updateElementIfExists('[data-metric="ant-state"]', data.ant_state || 'Unknown');
-        updateElementIfExists('[data-metric="auto-state"]', data.auto_state || 'Unknown');
+    btn.addEventListener('mousedown', pressHandler);
+    btn.addEventListener('touchstart', function(e) { e.preventDefault(); pressHandler(); }, { passive: false });
+    btn.addEventListener('mouseup', releaseHandler);
+    btn.addEventListener('mouseleave', releaseHandler);
+    btn.addEventListener('touchend', function(e) { e.preventDefault(); releaseHandler(); }, { passive: false });
+  });
 
-        // Update CI-V card fields
-        updateElementIfExists('[data-metric="civ-baud"]', '19200');
-        const devNumInput = document.querySelector('[data-metric="device-number"]');
-        let devNum = 1;
-        if (data.device_number) {
-          devNum = parseInt(data.device_number);
-        } else if (devNumInput && devNumInput.value) {
-          devNum = parseInt(devNumInput.value);
+  // Patch the WebSocket connection logic for deduplication
+  let wsPatched = false;
+  function patchWsHandler() {
+    if (wsPatched || !window.ws) return;
+    wsPatched = true;
+    const oldOnMessage = ws.onmessage;
+    ws.onmessage = function(event) {
+      try {
+        if (typeof event.data === "string" && event.data.startsWith("button:")) {
+          // Ignore all button status messages - no longer displaying HIGH/LOW under buttons
+          return;
         }
-        if (isNaN(devNum) || devNum < 1) devNum = 1;
-        if (devNum > 4) devNum = 4;
-        if (devNumInput) devNumInput.value = devNum;
-        // Calculate CI-V Address based on device number (1-4)
-        let civHex = (0xB7 + devNum).toString(16).toUpperCase();
-        if (civHex.length < 2) civHex = '0' + civHex;
-        let civDisplay = '0x' + civHex;
-        updateElementIfExists('[data-metric="civ-address"]', civDisplay);
-
-        // --- Update CI-V Model radio buttons and dashboard visibility from backend ---
-        if (typeof data.civ_model !== 'undefined') {
-          const civ991 = document.getElementById('civ-model-991');
-          const civ998 = document.getElementById('civ-model-998');
-          if (civ991 && civ998) {
-            civ991.checked = (data.civ_model === '991-994');
-            civ998.checked = (data.civ_model === '998');
-            updateTunerVisibilityForModel(data.civ_model);
+        // Pass through to existing handler
+        if (typeof event.data === "string" && event.data.trim().startsWith("{")) {
+          const data = JSON.parse(event.data);
+          if (data.type === 'dashboard_update') {
+            updateDashboard(data);
           }
         }
+      } catch (e) {
+        // Not JSON? Ignore.
+      }
+      // Call any original handler (safety)
+      if (oldOnMessage) oldOnMessage.apply(ws, arguments);
+    };
+  }
+  // Ensure the patch is applied after ws is connected
+  const wsCheckInterval = setInterval(() => {
+    if (window.ws && ws.readyState === WebSocket.OPEN) {
+      patchWsHandler();
+      clearInterval(wsCheckInterval);
+    }
+  }, 100);
+});
 
-// Remove duplicate DOMContentLoaded above.
+// --- WebSocket connection for real-time updates & feedback from backend ---
+let ws = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+const reconnectDelay = 3000; // 3 seconds
 
-        // Update connection info
-        updateElementIfExists('[data-metric="ip-address"]', data.ip || 'Unknown');
-        // Show full IP:PORT for WebSocket Server
-        let wsServerDisplay = data.websocket_port || 'Unknown';
-        if (/^\d+$/.test(wsServerDisplay) && data.ip) {
-          wsServerDisplay = data.ip + ':' + wsServerDisplay;
-        }
-        updateElementIfExists('[data-metric="websocket-port"]', wsServerDisplay);
-        updateElementIfExists('[data-metric="udp-port"]', data.udp_port || 'Unknown');
+function connectWebSocket() {
+  try {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/dashboard-ws`;
 
+    ws = new WebSocket(wsUrl);
 
-        // Update Remote WS connection status indicator and label
-        const remoteWsIndicator = document.getElementById('remote-ws-indicator');
-        const remoteWsLabel = document.getElementById('remote-ws-label');
-        if (typeof data.remote_ws_connected !== 'undefined') {
-          if (remoteWsIndicator) remoteWsIndicator.className = 'status-indicator ' + (data.remote_ws_connected ? 'status-online' : 'status-offline');
-          if (remoteWsLabel) {
-            remoteWsLabel.textContent = data.remote_ws_connected ? 'Connected' : 'Disconnected';
-            remoteWsLabel.style.color = data.remote_ws_connected ? '#4CAF50' : '#F44336';
+    ws.onopen = function() {
+      console.log('Dashboard WebSocket connected at', new Date().toISOString());
+      reconnectAttempts = 0;
+      ws.send('request_update');
+      console.log('Sent request_update to firmware');
+      
+      // Send any pending model change
+      if (window.pendingModelChange) {
+        ws.send(JSON.stringify({ set_civ_model: window.pendingModelChange }));
+        console.log('Sent pending model change on connect:', window.pendingModelChange);
+        window.pendingModelChange = null;
+      }
+      
+      // No fallback timeout - let firmware control the model selection completely
+    };
+
+    ws.onclose = function() {
+      console.log('Dashboard WebSocket disconnected');
+      ws = null;
+      if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++;
+        setTimeout(connectWebSocket, reconnectDelay);
+      }
+    };
+
+    ws.onmessage = function(event) {
+      console.log('Dashboard WebSocket received:', event.data);
+      try {
+        if (typeof event.data === "string" && event.data.trim().startsWith("{")) {
+          const data = JSON.parse(event.data);
+          console.log('Parsed dashboard data:', data);
+          if (data.type === 'dashboard_update') {
+            updateDashboard(data);
           }
+        }
+      } catch (e) {
+        console.error('Error parsing dashboard message:', e);
+      }
+    };
+
+    ws.onerror = function(error) {
+      console.error('Dashboard WebSocket error:', error);
+    };
+  } catch (e) {
+    console.error('Error creating WebSocket connection:', e);
+  }
+}
+
+function updateDashboard(data) {
+  const antBtn = document.getElementById('button-ant');
+  if (antBtn) {
+    // Check if ANT button should be momentary based on CI-V model
+    const isMomentary = data.ant_button_momentary;
+    
+    // Store momentary mode globally for event handlers
+    window.antButtonMomentary = isMomentary;
+    
+    if (isMomentary) {
+      // Model 998 - momentary button, just "ANT" label
+      antBtn.textContent = 'ANT';
+      antBtn.classList.remove('active'); // Momentary buttons don't stay active
+      // Change button class to indicate momentary behavior
+      antBtn.className = 'momentary-btn'; // Use same class as other momentary buttons
+    } else {
+      // Model 991 - toggle button with ANT 1/ANT 2 labels
+      const isAnt2 = (data.ant_state && data.ant_state.trim() === 'ANT 2');
+      antBtn.classList.toggle('active', isAnt2);
+      antBtn.textContent = isAnt2 ? 'ANT 2' : 'ANT 1';
+      antBtn.className = 'momentary-btn'; // Use momentary-btn class for consistent styling
+    }
+  }
+  
+  // Hide/show TUNING and SWR indicators based on model
+  const indicatorsRow = document.querySelector('.tuner-indicators-row');
+  if (indicatorsRow) {
+    const isModel998 = data.civ_model && data.civ_model.indexOf('998') >= 0;
+    if (isModel998) {
+      indicatorsRow.style.display = 'none'; // Hide entire indicators row for Model 998
+    } else {
+      indicatorsRow.style.display = 'flex'; // Show indicators for other models
+      // Update indicator states only when visible
+      const tuningDot = document.getElementById('tuning-dot');
+      if (tuningDot) {
+        // If tuning_active is 1 (active), turn red; otherwise turn gray
+        if (typeof data.tuning_active !== 'undefined' && data.tuning_active === 1) {
+          tuningDot.className = 'indicator-dot tuning'; // Red when active
         } else {
-          if (remoteWsIndicator) remoteWsIndicator.className = 'status-indicator status-offline';
-          if (remoteWsLabel) {
-            remoteWsLabel.textContent = 'Unknown';
-            remoteWsLabel.style.color = '#888';
-          }
-        }
-
-        // Update last update time
-        const now = new Date().toLocaleTimeString();
-        updateElementIfExists('.footer', `Dashboard updates in real-time via WebSocket. Last updated: ${now}`);
-
-        // Update status indicators based on system state
-        updateSystemStatus(data);
-      }
-
-      function updateElementIfExists(selector, value) {
-        const element = document.querySelector(selector);
-        if (element) {
-          element.textContent = value;
+          tuningDot.className = 'indicator-dot gray'; // Gray when inactive
         }
       }
-
-      function updateSystemStatus(data) {
-        // Update status indicators based on OTA, captive portal, etc.
-        const statusElements = document.querySelectorAll('.status-indicator');
-        statusElements.forEach(indicator => {
-          if (data.ota_active) {
-            indicator.className = 'status-indicator status-warning';
-          } else if (data.captive_portal_active) {
-            indicator.className = 'status-indicator status-offline';
-          } else {
-            indicator.className = 'status-indicator status-online';
-          }
-        });
-      }
-
-      // Initialize WebSocket connection when page loads
-      document.addEventListener('DOMContentLoaded', function() {
-        connectWebSocket();
-        const devNumInput = document.querySelector('[data-metric="device-number"]');
-        if (devNumInput) {
-          let lastSentDeviceNumber = parseInt(devNumInput.value);
-          devNumInput.addEventListener('change', function() {
-            let devNum = parseInt(devNumInput.value);
-            if (isNaN(devNum) || devNum < 1) devNum = 1;
-            if (devNum > 4) devNum = 4;
-            devNumInput.value = devNum;
-            if (ws && ws.readyState === WebSocket.OPEN && devNum !== lastSentDeviceNumber) {
-              ws.send(JSON.stringify({ set_device_number: devNum }));
-              lastSentDeviceNumber = devNum;
-              console.log('Sent set_device_number:', devNum);
-            }
-            // Do NOT update CI-V address here; wait for server broadcast
-          });
+      const swrDot = document.getElementById('swr-dot');
+      if (swrDot) {
+        // If swr_ok is 1 (active/good), turn green; otherwise turn gray
+        if (typeof data.swr_ok !== 'undefined' && data.swr_ok === 1) {
+          swrDot.className = 'indicator-dot swr'; // Green when active/good
+        } else {
+          swrDot.className = 'indicator-dot gray'; // Gray when inactive/bad
         }
-        // Add interactivity to cards
-        document.querySelectorAll('.dashboard-card').forEach(card => {
-          card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px) scale(1.02)';
-          });
-          card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-          });
-        });
-        // --- Tuner Control Button Logic ---
-        // Latch buttons: ANT 1, AUTO
-        const latchButtons = [
-          { id: 'button-ant', stateKey: 'ant_state', onLabel: 'ANT 2', offLabel: 'ANT 1' },
-          { id: 'button-auto', stateKey: 'auto_state', onLabel: 'AUTO', offLabel: 'SEMI' }
-        ];
-        latchButtons.forEach(btn => {
-          const el = document.getElementById(btn.id);
-          if (!el) return;
-          el.addEventListener('click', function() {
-            // Determine current state from label (not from .active, which may be stale)
-            const isCurrentlyOn = el.textContent.trim() === btn.onLabel;
-            const newState = !isCurrentlyOn;
-            // Send latch command to server
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(`latch:${btn.id}:${newState}`);
-            }
-            // Optimistically update UI (will be corrected by updateDashboard on server reply)
-            el.classList.toggle('active', newState);
-            el.textContent = newState ? btn.onLabel : btn.offLabel;
-          });
-        });
+      }
+    }
+  }
+  
+  const autoBtn = document.getElementById('button-auto');
+  if (autoBtn) {
+    const isAuto = (data.auto_state && data.auto_state.trim() === 'AUTO');
+    autoBtn.classList.toggle('active', isAuto);
+    autoBtn.textContent = isAuto ? 'AUTO' : 'SEMI';
+  }
+  updateElementIfExists('#current-time', data.time || 'TIME_NOT_SET');
+  updateElementIfExists('[data-metric="mem-total"]', `${data.mem_total || 0} KB`);
+  updateElementIfExists('[data-metric="mem-used"]', `${data.mem_used || 0} KB`);
+  updateElementIfExists('[data-metric="mem-free"]', `${data.mem_free || 0} KB`);
+  updateElementIfExists('[data-metric="flash-total"]', `${data.flash_total || 0} KB`);
+  updateElementIfExists('[data-metric="flash-used"]', `${data.flash_used || 0} KB`);
+  updateElementIfExists('[data-metric="flash-free"]', `${data.flash_free || 0} KB`);
+  let d = (typeof data.uptime_days === 'number') ? data.uptime_days : 0;
+  let h = (typeof data.uptime_hours === 'number') ? data.uptime_hours : 0;
+  let m = (typeof data.uptime_minutes === 'number') ? data.uptime_minutes : 0;
+  let s = (typeof data.uptime_seconds === 'number') ? data.uptime_seconds : 0;
+  let uptimeStr = '';
+  if (d > 0) uptimeStr += d + ' days ';
+  if (d > 0 || h > 0) uptimeStr += String(h).padStart(2, '0') + ':';
+  uptimeStr += String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  updateElementIfExists('[data-metric="uptime"]', uptimeStr);
+  updateElementIfExists('[data-metric="chip-id"]', data.chip_id || 'Unknown');
+  updateElementIfExists('[data-metric="chip-rev"]', data.chip_rev || 'Unknown');
+  updateElementIfExists('[data-metric="cpu-freq"]', `${data.cpu_freq || 0} MHz`);
+  updateElementIfExists('[data-metric="psram-size"]', `${data.psram_size || 0} KB`);
+  updateElementIfExists('[data-metric="ant-state"]', data.ant_state || 'Unknown');
+  updateElementIfExists('[data-metric="auto-state"]', data.auto_state || 'Unknown');
+  updateElementIfExists('[data-metric="civ-baud"]', '19200');
+  const devNumInput = document.querySelector('[data-metric="device-number"]');
+  let devNum = 1;
+  if (data.device_number) {
+    devNum = parseInt(data.device_number);
+  } else if (devNumInput && devNumInput.value) {
+    devNum = parseInt(devNumInput.value);
+  }
+  if (isNaN(devNum) || devNum < 1) devNum = 1;
+  if (devNum > 4) devNum = 4;
+  if (devNumInput) devNumInput.value = devNum;
+  let civHex = (0xB7 + devNum).toString(16).toUpperCase();
+  if (civHex.length < 2) civHex = '0' + civHex;
+  let civDisplay = '0x' + civHex;
+  updateElementIfExists('[data-metric="civ-address"]', civDisplay);
+  if (typeof data.civ_model !== 'undefined') {
+    console.log('Received civ_model from firmware:', data.civ_model);
+    const civ991 = document.getElementById('civ-model-991');
+    const civ998 = document.getElementById('civ-model-998');
+    if (civ991 && civ998) {
+      // Store the previous state for comparison
+      const prev991 = civ991.checked;
+      const prev998 = civ998.checked;
+      const prevModel = prev991 ? '991-994' : (prev998 ? '998' : 'none');
+      
+      // Temporarily disable event listeners to prevent infinite loop
+      civ991.disabled = true;
+      civ998.disabled = true;
+      
+      civ991.checked = (data.civ_model === '991-994');
+      civ998.checked = (data.civ_model === '998');
+      
+      // Re-enable event listeners
+      civ991.disabled = false;
+      civ998.disabled = false;
+      
+      console.log('Model persistence check - Previous UI:', prevModel, '→ Firmware says:', data.civ_model);
+      console.log('Radio buttons updated - 991:', civ991.checked, '998:', civ998.checked);
+      updateTunerVisibilityForModel(data.civ_model);
+      
+      // If there was a change, log it for debugging
+      if (prevModel !== data.civ_model && prevModel !== 'none') {
+        console.warn('Model reverted! UI was:', prevModel, 'but firmware has:', data.civ_model);
+      }
+    }
+  } else {
+    console.log('No civ_model in dashboard data - this should not happen');
+  }
+  updateElementIfExists('[data-metric="ip-address"]', data.ip || 'Unknown');
+  let wsServerDisplay = data.websocket_port || 'Unknown';
+  if (/^\d+$/.test(wsServerDisplay) && data.ip) {
+    wsServerDisplay = data.ip + ':' + wsServerDisplay;
+  }
+  updateElementIfExists('[data-metric="websocket-port"]', wsServerDisplay);
+  updateElementIfExists('[data-metric="udp-port"]', data.udp_port || 'Unknown');
+  const remoteWsIndicator = document.getElementById('remote-ws-indicator');
+  const remoteWsLabel = document.getElementById('remote-ws-label');
+  if (typeof data.remote_ws_connected !== 'undefined') {
+    if (remoteWsIndicator) remoteWsIndicator.className = 'status-indicator ' + (data.remote_ws_connected ? 'status-online' : 'status-offline');
+    if (remoteWsLabel) {
+      remoteWsLabel.textContent = data.remote_ws_connected ? 'Connected' : 'Disconnected';
+      remoteWsLabel.style.color = data.remote_ws_connected ? '#4CAF50' : '#F44336';
+    }
+  } else {
+    if (remoteWsIndicator) remoteWsIndicator.className = 'status-indicator status-offline';
+    if (remoteWsLabel) {
+      remoteWsLabel.textContent = 'Unknown';
+      remoteWsLabel.style.color = '#888';
+    }
+  }
+  const now = new Date().toLocaleTimeString();
+  updateElementIfExists('.footer', `Dashboard updates in real-time via WebSocket. Last updated: ${now}`);
+  updateSystemStatus(data);
+}
 
-        // Momentary buttons: C-DN, L-DN only (C-UP and L-UP handled by custom logic above)
-        const momentaryButtons = [
-          'button-cdn', 'button-ldn'
-        ];
-        momentaryButtons.forEach(id => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          el.addEventListener('mousedown', function() {
-            el.classList.add('active');
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(`momentary:${id}:on`);
-            }
-          });
-          el.addEventListener('mouseup', function() {
-            el.classList.remove('active');
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(`momentary:${id}:off`);
-            }
-          });
-          el.addEventListener('mouseleave', function() {
-            el.classList.remove('active');
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(`momentary:${id}:off`);
-            }
-          });
-          el.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            el.classList.add('active');
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(`momentary:${id}:on`);
-            }
-          }, { passive: false });
-          el.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            el.classList.remove('active');
-            if (ws && ws.readyState === WebSocket.OPEN) {
-              ws.send(`momentary:${id}:off`);
-            }
-          }, { passive: false });
-        });
-
-        // Add interactivity to cards
-        document.querySelectorAll('.dashboard-card').forEach(card => {
-          card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px) scale(1.02)';
-          });
-          card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-          });
-        });
-      // End of DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+  connectWebSocket();
+  const devNumInput = document.querySelector('[data-metric="device-number"]');
+  if (devNumInput) {
+    let lastSentDeviceNumber = parseInt(devNumInput.value);
+    devNumInput.addEventListener('change', function() {
+      let devNum = parseInt(devNumInput.value);
+      if (isNaN(devNum) || devNum < 1) devNum = 1;
+      if (devNum > 4) devNum = 4;
+      devNumInput.value = devNum;
+      if (ws && ws.readyState === WebSocket.OPEN && devNum !== lastSentDeviceNumber) {
+        ws.send(JSON.stringify({ set_device_number: devNum }));
+        lastSentDeviceNumber = devNum;
+        console.log('Sent set_device_number:', devNum);
+      }
     });
-
-      // Cleanup WebSocket when page unloads
-      window.addEventListener('beforeunload', function() {
-        if (ws) {
-          ws.close();
-        }
-      });
+  }
+  document.querySelectorAll('.dashboard-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateY(-5px) scale(1.02)';
+    });
+    card.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(0) scale(1)';
+    });
+  });
+  // Latch buttons: ANT 1, AUTO
+  const latchButtons = [
+    { id: 'button-ant', stateKey: 'ant_state', onLabel: 'ANT 2', offLabel: 'ANT 1' },
+    { id: 'button-auto', stateKey: 'auto_state', onLabel: 'AUTO', offLabel: 'SEMI' }
+  ];
+  latchButtons.forEach(btn => {
+    const el = document.getElementById(btn.id);
+    if (!el) return;
+    el.addEventListener('click', function() {
+      // Check if ANT button is in momentary mode
+      if (btn.id === 'button-ant' && window.antButtonMomentary) {
+        // Momentary mode - do nothing on click, handled by press/release events
+        return;
+      }
+      
+      // Latch mode (original behavior)
+      const isCurrentlyOn = el.textContent.trim() === btn.onLabel;
+      const newState = !isCurrentlyOn;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(`latch:${btn.id}:${newState}`);
+      }
+      el.classList.toggle('active', newState);
+      el.textContent = newState ? btn.onLabel : btn.offLabel;
+    });
+  });
+});
+window.addEventListener('beforeunload', function() {
+  if (ws) {
+    ws.close();
+  }
+});
     </script>
   </body>
 </html>

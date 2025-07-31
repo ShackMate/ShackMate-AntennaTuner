@@ -6,6 +6,8 @@
 
 #define MCP23017_IODIRA 0x00
 #define MCP23017_IODIRB 0x01
+#define MCP23017_GPPUA 0x0C
+#define MCP23017_GPPUB 0x0D
 #define MCP23017_GPIOA 0x12
 #define MCP23017_GPIOB 0x13
 #define MCP23017_OLATA 0x14
@@ -14,13 +16,15 @@
 class MCP23017
 {
 public:
-    MCP23017(uint8_t address = 0x20) : _address(address), iodirA(0xFF), iodirB(0xFF), gpioA(0), gpioB(0) {}
+    MCP23017(uint8_t address = 0x20) : _address(address), iodirA(0xFF), iodirB(0xFF), gppuA(0), gppuB(0), gpioA(0), gpioB(0) {}
 
     void begin()
     {
         Wire.begin();
         writeRegister(MCP23017_IODIRA, iodirA);
         writeRegister(MCP23017_IODIRB, iodirB);
+        writeRegister(MCP23017_GPPUA, gppuA); // Initialize pull-ups
+        writeRegister(MCP23017_GPPUB, gppuB); // Initialize pull-ups
         writeRegister(MCP23017_GPIOA, gpioA);
         writeRegister(MCP23017_GPIOB, gpioB);
     }
@@ -29,20 +33,44 @@ public:
     {
         if (pin < 8)
         {
-            if (mode == 1)
+            if (mode == INPUT_PULLUP)
+            {
                 iodirA |= (1 << pin); // INPUT
-            else
+                gppuA |= (1 << pin);  // Enable pull-up
+            }
+            else if (mode == INPUT)
+            {
+                iodirA |= (1 << pin); // INPUT
+                gppuA &= ~(1 << pin); // Disable pull-up for active-high with external pull-down
+            }
+            else // OUTPUT mode
+            {
                 iodirA &= ~(1 << pin); // OUTPUT
+                gppuA &= ~(1 << pin);  // Outputs don't need pull-ups
+            }
             writeRegister(MCP23017_IODIRA, iodirA);
+            writeRegister(MCP23017_GPPUA, gppuA);
         }
         else
         {
             pin -= 8;
-            if (mode == 1)
-                iodirB |= (1 << pin);
-            else
-                iodirB &= ~(1 << pin);
+            if (mode == INPUT_PULLUP)
+            {
+                iodirB |= (1 << pin); // INPUT
+                gppuB |= (1 << pin);  // Enable pull-up
+            }
+            else if (mode == INPUT)
+            {
+                iodirB |= (1 << pin); // INPUT
+                gppuB &= ~(1 << pin); // Disable pull-up for active-high with external pull-down
+            }
+            else // OUTPUT mode
+            {
+                iodirB &= ~(1 << pin); // OUTPUT
+                gppuB &= ~(1 << pin);  // Outputs don't need pull-ups
+            }
             writeRegister(MCP23017_IODIRB, iodirB);
+            writeRegister(MCP23017_GPPUB, gppuB);
         }
     }
 
@@ -138,6 +166,7 @@ public:
 private:
     uint8_t _address;
     uint8_t iodirA, iodirB;
+    uint8_t gppuA, gppuB;
     uint8_t gpioA, gpioB;
 
     void writeRegister(uint8_t reg, uint8_t value)
