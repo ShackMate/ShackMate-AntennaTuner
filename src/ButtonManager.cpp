@@ -279,6 +279,35 @@ bool ButtonManager::releaseButton(const String &buttonId)
     return setButtonOutput(buttonId, false);
 }
 
+bool ButtonManager::pulseButton(const String &buttonId, unsigned long durationMs)
+{
+    int index = findButtonIndex(buttonId);
+    if (index < 0)
+    {
+        DEBUG_PRINTF("[ERROR] pulseButton: Invalid button ID: %s\n", buttonId.c_str());
+        return false;
+    }
+
+    if (!mcp)
+    {
+        DEBUG_PRINTLN("[ERROR] pulseButton: MCP23017 instance is null");
+        return false;
+    }
+
+    uint8_t pin = buttonMappings[index].mcpPin;
+    uint8_t momentaryIdx = buttonMappings[index].momentaryIndex;
+
+    // Start the pulse
+    mcp->digitalWrite(pin, LOW); // Press (active low)
+    momentaryActions[momentaryIdx].inProgress = true;
+    momentaryActions[momentaryIdx].expireMillis = millis() + durationMs;
+
+    DEBUG_PRINTF("[DEBUG] Button pulse started for %s (pin %d) - %lums duration\n",
+                 buttonMappings[index].name, pin, durationMs);
+
+    return true;
+}
+
 bool ButtonManager::startMomentaryAction(const String &buttonId)
 {
     int index = findButtonIndex(buttonId);

@@ -57,6 +57,7 @@ public:
     bool setButtonOutput(const String &buttonId); // Uses saved state
     bool pressButton(const String &buttonId);
     bool releaseButton(const String &buttonId);
+    bool pulseButton(const String &buttonId, unsigned long durationMs = 200); // NEW: Timed pulse
 
     // Momentary button handling
     bool startMomentaryAction(const String &buttonId);

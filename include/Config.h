@@ -58,7 +58,7 @@
 // =========================================================================
 
 #define DEFAULT_CIV_MODEL "991-994"
-#define CIV_BASE_ADDRESS 0xB3
+#define CIV_BASE_ADDRESS 0xB7
 #define MIN_DEVICE_NUMBER 1
 #define MAX_DEVICE_NUMBER 4
 

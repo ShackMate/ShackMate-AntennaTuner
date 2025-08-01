@@ -81,6 +81,8 @@ void ConfigManager::setDeviceNumber(uint8_t number)
 void ConfigManager::updateCivAddress()
 {
     civAddress = CIV_BASE_ADDRESS + deviceNumber;
+    DEBUG_PRINTF("[CONFIG] Device Number: %d, CI-V Address calculated: 0x%02X (base: 0x%02X)\n",
+                 deviceNumber, civAddress, CIV_BASE_ADDRESS);
 }
 
 bool ConfigManager::setCivModel(const String &model)

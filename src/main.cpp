@@ -65,6 +65,15 @@ String tcpPort = String(WEBSOCKET_PORT);
 String discoveredWsServer = "";
 String lastRemoteWsServer = "";
 
+// CI-V configuration
+uint8_t civAddress = CIV_BASE_ADDRESS;
+
+// Global tuner indicator status (updated continuously)
+bool g_tuningIndicatorStatus = false;
+bool g_swrIndicatorStatus = false;
+unsigned long lastIndicatorUpdate = 0;
+#define INDICATOR_UPDATE_INTERVAL 100 // Update every 100ms
+
 // =========================================================================
 // FORWARD DECLARATIONS
 // =========================================================================
@@ -73,6 +82,7 @@ void setupWiFi();
 void setupWebServers();
 void setupOTA();
 void setupDiscovery();
+void setupSMCIV();
 void loadFileSystem();
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
@@ -154,6 +164,9 @@ void setup()
   setupOTA();
   setupDiscovery();
 
+  // Initialize SMCIV with remote WebSocket and CI-V address
+  setupSMCIV();
+
   // Load CI-V model and apply button states
   config.loadAllSettings();
   buttons.setButtonOutput("button-ant");
@@ -173,6 +186,45 @@ void setup()
 }
 
 // =========================================================================
+// TUNER INDICATOR MONITORING
+// =========================================================================
+
+void updateTunerIndicators()
+{
+  unsigned long currentTime = millis();
+  if (currentTime - lastIndicatorUpdate >= INDICATOR_UPDATE_INTERVAL)
+  {
+    lastIndicatorUpdate = currentTime;
+
+    // Read current status from hardware (if available)
+    if (hardware.isHardwareReady())
+    {
+      bool newTuningStatus = hardware.getTuningStatus();
+      bool newSWRStatus = hardware.getSWRStatus();
+
+      // Update globals if changed
+      if (newTuningStatus != g_tuningIndicatorStatus || newSWRStatus != g_swrIndicatorStatus)
+      {
+        g_tuningIndicatorStatus = newTuningStatus;
+        g_swrIndicatorStatus = newSWRStatus;
+        DEBUG_PRINTF("[INDICATORS] Tuning: %s, SWR: %s\n",
+                     g_tuningIndicatorStatus ? "HIGH" : "LOW",
+                     g_swrIndicatorStatus ? "HIGH" : "LOW");
+      }
+    }
+    else
+    {
+      // Hardware not available - use test values for now
+      // In production, you might want to set both to false
+      static bool testToggle = false;
+      testToggle = !testToggle;
+      g_tuningIndicatorStatus = false;
+      g_swrIndicatorStatus = testToggle; // Alternate for testing
+    }
+  }
+}
+
+// =========================================================================
 // MAIN LOOP
 // =========================================================================
 
@@ -183,6 +235,9 @@ void loop()
 
   // Update hardware components
   hardware.updateLED();
+
+  // Update tuner indicators (continuous monitoring)
+  updateTunerIndicators();
 
   // Process button states and momentary actions
   buttons.scanButtonStates();
@@ -382,6 +437,146 @@ void setupDiscovery()
   DEBUG_PRINTF("[INFO] UDP discovery started on port %d\n", UDP_DISCOVERY_PORT);
 }
 
+void setupSMCIV()
+{
+  DEBUG_PRINTLN("[SETUP] Initializing SMCIV for antenna tuner control...");
+
+  // Get CI-V address from config (already calculated based on device number)
+  civAddress = config.getCivAddress();
+  DEBUG_PRINTF("[SETUP] Device Number: %d, CI-V Address: 0x%02X\n", config.getDeviceNumber(), civAddress);
+
+  // Initialize SMCIV with remote WebSocket client and CI-V address
+  smciv.begin(&remoteWS, &civAddress);
+
+  // Set up callback functions for tuner integration
+  smciv.setTunerButtonCallback([](uint8_t buttonCode)
+                               {
+    DEBUG_PRINTF("[CI-V] Button callback: 0x%02X\n", buttonCode);
+    
+    // Check current model to determine behavior
+    String currentModel = config.getCurrentCivModel();
+    bool isModel998 = (currentModel.indexOf("998") >= 0);
+    
+    switch (buttonCode) {
+      case 0x00: // ANT button/latch command
+        if (isModel998) {
+          // Model 998: Pulse ANT button for 500ms (momentary/toggle mode)
+          DEBUG_PRINTLN("[CI-V] Model 998: ANT button pulse command received");
+          buttons.pulseButton("button-ant", 500);
+        } else {
+          // Model 991: Set ANT latch to ANT 1 (latching mode)
+          DEBUG_PRINTLN("[CI-V] Model 991: Set ANT latch to ANT 1");
+          config.setAntState(false); // ANT 1 = false
+          buttons.setButtonOutput("button-ant", false);
+          sendDashboardUpdate(nullptr); // Update dashboard
+        }
+        break;
+        
+      case 0x01: // ANT 2 command
+        if (isModel998) {
+          // Model 998: Pulse ANT button for 500ms (same as 34 00)
+          DEBUG_PRINTLN("[CI-V] Model 998: ANT button pulse command received");
+          buttons.pulseButton("button-ant", 500);
+        } else {
+          // Model 991: Set ANT latch to ANT 2 (latching mode)
+          DEBUG_PRINTLN("[CI-V] Model 991: Set ANT latch to ANT 2");
+          config.setAntState(true); // ANT 2 = true
+          buttons.setButtonOutput("button-ant", true);
+          sendDashboardUpdate(nullptr); // Update dashboard
+        }
+        break;
+        
+      case 0x02: // TUNE
+        DEBUG_PRINTLN("[CI-V] TUNE command received");
+        buttons.pulseButton("button-tune", 200); // 200ms pulse
+        break;
+        
+      case 0x03: // C-UP
+        DEBUG_PRINTLN("[CI-V] C-UP command received");
+        buttons.pulseButton("button-cup", 200); // 200ms pulse
+        break;
+        
+      case 0x04: // C-DN
+        DEBUG_PRINTLN("[CI-V] C-DN command received");  
+        buttons.pulseButton("button-cdn", 200); // 200ms pulse
+        break;
+        
+      case 0x05: // L-UP
+        DEBUG_PRINTLN("[CI-V] L-UP command received");
+        buttons.pulseButton("button-lup", 200); // 200ms pulse
+        break;
+        
+      case 0x06: // L-DN
+        DEBUG_PRINTLN("[CI-V] L-DN command received");
+        buttons.pulseButton("button-ldn", 200); // 200ms pulse
+        break;
+        
+      default:
+        DEBUG_PRINTF("[CI-V] Unknown button code: 0x%02X\n", buttonCode);
+        break;
+    }
+    
+    // Send dashboard update after button action
+    sendDashboardUpdate(nullptr); });
+
+  smciv.setTunerIndicatorCallback([](uint8_t indicatorType) -> bool
+                                  {
+    DEBUG_PRINTF("[DEBUG] TunerIndicatorCallback called with type: %u\n", indicatorType);
+    switch (indicatorType) {
+      case 1: // Tuning indicator
+        DEBUG_PRINTF("[DEBUG] Returning %s for tuning indicator (global value)\n", 
+                     g_tuningIndicatorStatus ? "true" : "false");
+        return g_tuningIndicatorStatus;
+      case 2: // SWR indicator  
+        DEBUG_PRINTF("[DEBUG] Returning %s for SWR indicator (global value)\n", 
+                     g_swrIndicatorStatus ? "true" : "false");
+        return g_swrIndicatorStatus;
+      default:
+        DEBUG_PRINTLN("[DEBUG] Unknown indicator type, returning false");
+        return false;
+    } });
+
+  smciv.setTunerModelCallback([]() -> String
+                              { return config.getCurrentCivModel(); });
+
+  smciv.setTunerModelSetCallback([](uint8_t modelCode) -> bool
+                                 {
+    String newModel;
+    switch (modelCode) {
+      case 0x00:
+        newModel = "991-994";
+        break;
+      case 0x01:
+        newModel = "998";
+        break;
+      default:
+        DEBUG_PRINTF("[CI-V] Unknown model code: 0x%02X\n", modelCode);
+        return false;
+    }
+    
+    DEBUG_PRINTF("[CI-V] Setting model to: %s\n", newModel.c_str());
+    bool success = config.setCivModel(newModel);
+    
+    if (success) {
+      // Update button behavior based on new model
+      buttons.setButtonOutput("button-ant");
+      buttons.setButtonOutput("button-auto");
+      // Send dashboard update
+      sendDashboardUpdate(nullptr);
+    }
+    
+    return success; });
+
+  DEBUG_PRINTF("[INFO] SMCIV initialized with CI-V address: 0x%02X\n", civAddress);
+
+  // Set up CI-V response callback for remote WebSocket
+  smciv.setCivResponseCallback([](const String &hexResponse)
+                               {
+    DEBUG_PRINTF("[CI-V] Sending response via remote WebSocket: %s\n", hexResponse.c_str());
+    String response = hexResponse; // Create mutable copy
+    remoteWS.sendTXT(response); });
+}
+
 // =========================================================================
 // WEBSOCKET HANDLERS
 // =========================================================================
@@ -408,6 +603,26 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
       data[len] = 0;
       String message = String((char *)data);
       DEBUG_PRINTF("[WS] Message from client %u: %s\n", client->id(), message.c_str());
+
+      // Check if this is a CI-V hex message (contains hex digits and spaces)
+      bool isHexMessage = true;
+      for (int i = 0; i < message.length(); i++)
+      {
+        char c = message.charAt(i);
+        if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || c == ' '))
+        {
+          isHexMessage = false;
+          break;
+        }
+      }
+
+      if (isHexMessage && message.length() >= 10)
+      { // Minimum CI-V message length
+        // Handle as CI-V message
+        DEBUG_PRINTF("[WS] Processing CI-V message: %s\n", message.c_str());
+        smciv.handleIncomingWsMessage(message);
+        break;
+      }
 
       // Handle button presses (but avoid ANT/AUTO buttons which use latch format)
       if (message.startsWith("button:"))
@@ -645,6 +860,9 @@ void onDashboardWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         int newDeviceNumber = doc["set_device_number"];
         DEBUG_PRINTF("[DASH] Device number change request: %d\n", newDeviceNumber);
         config.setDeviceNumber(newDeviceNumber);
+        // Update the global civAddress variable immediately
+        civAddress = config.getCivAddress();
+        DEBUG_PRINTF("[DASH] CI-V address updated to: 0x%02X\n", civAddress);
         // Send updated state to all clients
         sendDashboardUpdate(nullptr);
       }
@@ -653,6 +871,9 @@ void onDashboardWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
         int newDeviceNumber = doc["value"];
         DEBUG_PRINTF("[DASH] Device number change request: %d\n", newDeviceNumber);
         config.setDeviceNumber(newDeviceNumber);
+        // Update the global civAddress variable immediately
+        civAddress = config.getCivAddress();
+        DEBUG_PRINTF("[DASH] CI-V address updated to: 0x%02X\n", civAddress);
         // Send updated state to all clients
         sendDashboardUpdate(nullptr);
       }
@@ -706,13 +927,43 @@ void onRemoteWsEvent(WStype_t type, uint8_t *payload, size_t length)
   case WStype_CONNECTED:
     remoteWSConnected = true;
     DEBUG_PRINTF("[REMOTE] Connected to: %s\n", (char *)payload);
+
+    // Notify SMCIV about the WebSocket connection
+    smciv.handleWsClientEvent(type, payload, length);
     break;
 
   case WStype_TEXT:
+  {
     DEBUG_PRINTF("[REMOTE] Received: %s\n", (char *)payload);
-    // Forward messages to dashboard clients
-    dashboardWs.textAll(String((char *)payload));
+
+    // Check if this is a CI-V hex message (contains hex digits and spaces)
+    String message = String((char *)payload);
+    bool isHexMessage = true;
+
+    // Simple heuristic: CI-V messages contain hex digits and spaces/no spaces
+    for (int i = 0; i < message.length(); i++)
+    {
+      char c = message.charAt(i);
+      if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || c == ' '))
+      {
+        isHexMessage = false;
+        break;
+      }
+    }
+
+    if (isHexMessage && message.length() >= 10)
+    { // Minimum CI-V message length
+      // Handle as CI-V message
+      DEBUG_PRINTF("[REMOTE] Processing CI-V message: %s\n", message.c_str());
+      smciv.handleIncomingWsMessage(message);
+    }
+    else
+    {
+      // Forward regular messages to dashboard clients
+      dashboardWs.textAll(message);
+    }
     break;
+  }
 
   case WStype_ERROR:
     DEBUG_PRINTF("[REMOTE] Error: %s\n", (char *)payload);
@@ -1042,7 +1293,6 @@ void sendDashboardUpdate(AsyncWebSocketClient *client)
   }
   else
   {
-    ws.textAll(message);
     dashboardWs.textAll(message);
   }
 

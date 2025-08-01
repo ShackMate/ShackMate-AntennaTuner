@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <WiFi.h>
+#include "../../include/Config.h"
 
 // Preferences storage for antenna port selection
 static Preferences antennaPrefs;
@@ -67,7 +68,7 @@ String SMCIV::formatBytesToHex(const uint8_t *data, size_t length)
 // Send a CI-V response for the given command and subcommand
 void SMCIV::sendCivResponse(uint8_t cmd, uint8_t subcmd, uint8_t fromAddr)
 {
-    uint8_t civAddr = civAddressPtr ? *civAddressPtr : 0xB4;
+    uint8_t civAddr = civAddressPtr ? *civAddressPtr : 0xB8;
 
     // Debug prints to confirm command/subcommand, civAddr, and WiFi IP
     Serial.printf("[CI-V] sendCivResponse called with cmd=0x%02X, subcmd=0x%02X, fromAddr=0x%02X\n", cmd, subcmd, fromAddr);
@@ -84,23 +85,16 @@ void SMCIV::sendCivResponse(uint8_t cmd, uint8_t subcmd, uint8_t fromAddr)
             0xFD};
 
         Serial.printf("[CI-V] Sending IP response with command echo: %s\n", formatBytesToHex(response, 11).c_str());
-        if (wsClient)
-        {
-            String hexMsg = formatBytesToHex(response, 11);
-            wsClient->sendTXT(hexMsg);
-        }
+        sendCivHexResponse(response, 11);
         return;
     }
 
     if (cmd == 0x19 && subcmd == 0x00)
     {
-        uint8_t response[8] = {0xFE, 0xFE, fromAddr, civAddr, 0x19, 0x00, civAddr, 0xFD};
-        Serial.printf("[CI-V] Sending 19 00 response (with fixed checksum 0xFD): %s\n", formatBytesToHex(response, 8).c_str());
-        if (wsClient)
-        {
-            String hexMsg = formatBytesToHex(response, 8);
-            wsClient->sendTXT(hexMsg);
-        }
+        uint8_t response[8] = {0xFE, 0xFE, 0xEE, civAddr, 0x19, 0x00, civAddr, 0xFD};
+        Serial.printf("[CI-V] Sending 19 00 response to broadcast (EE) from our address (0x%02X): %s\n",
+                      civAddr, formatBytesToHex(response, 8).c_str());
+        sendCivHexResponse(response, 8);
         return;
     }
 
@@ -109,11 +103,7 @@ void SMCIV::sendCivResponse(uint8_t cmd, uint8_t subcmd, uint8_t fromAddr)
         Serial.printf("[DEBUG] rcsType before sending 0x30 response: %u\n", rcsType);
         uint8_t response[] = {0xFE, 0xFE, fromAddr, civAddr, 0x30, rcsType, 0xFD};
         Serial.printf("[CI-V] Sending 30 read/set response (rcsType as 6th byte): %s\n", formatBytesToHex(response, sizeof(response)).c_str());
-        if (wsClient)
-        {
-            String hexMsg = formatBytesToHex(response, sizeof(response));
-            wsClient->sendTXT(hexMsg);
-        }
+        sendCivHexResponse(response, sizeof(response));
         return;
     }
 
@@ -127,7 +117,7 @@ void SMCIV::sendCivResponse(uint8_t cmd, uint8_t subcmd, uint8_t fromAddr)
             if (wsClient)
             {
                 String hexMsg = formatBytesToHex(response, sizeof(response));
-                wsClient->sendTXT(hexMsg);
+                sendCivHexResponse(response, sizeof(response));
             }
             return;
         }
@@ -147,7 +137,7 @@ void SMCIV::sendCivResponse(uint8_t cmd, uint8_t subcmd, uint8_t fromAddr)
                 if (wsClient)
                 {
                     String hexMsg = formatBytesToHex(response, sizeof(response));
-                    wsClient->sendTXT(hexMsg);
+                    sendCivHexResponse(response, sizeof(response));
                 }
                 broadcastAntennaState();
             }
@@ -157,7 +147,7 @@ void SMCIV::sendCivResponse(uint8_t cmd, uint8_t subcmd, uint8_t fromAddr)
                 if (wsClient)
                 {
                     String hexMsg = formatBytesToHex(response, sizeof(response));
-                    wsClient->sendTXT(hexMsg);
+                    sendCivHexResponse(response, sizeof(response));
                 }
             }
             return;
@@ -172,7 +162,7 @@ void SMCIV::sendCivResponse(uint8_t cmd, uint8_t subcmd, uint8_t fromAddr)
         if (wsClient)
         {
             String hexMsg = formatBytesToHex(response, sizeof(response));
-            wsClient->sendTXT(hexMsg);
+            sendCivHexResponse(response, sizeof(response));
         }
     }
 }
@@ -240,6 +230,25 @@ void SMCIV::setGpioOutputCallback(GpioOutputCallback callback)
 {
     gpioCallback = callback;
     Serial.println("[SMCIV] GPIO output callback registered");
+}
+
+void SMCIV::setCivResponseCallback(CivResponseCallback callback)
+{
+    civResponseCallback = callback;
+    Serial.println("[SMCIV] CI-V response callback registered");
+}
+
+void SMCIV::sendCivHexResponse(const uint8_t *response, size_t length)
+{
+    String hexMsg = formatBytesToHex(response, length);
+    if (civResponseCallback)
+    {
+        civResponseCallback(hexMsg);
+    }
+    else if (wsClient)
+    {
+        wsClient->sendTXT(hexMsg);
+    }
 }
 
 void SMCIV::setRcsType(uint8_t value)
@@ -325,8 +334,11 @@ void SMCIV::handleIncomingWsMessage(const String &asciiHex)
     uint8_t toAddr = bytes[2];
     uint8_t fromAddr = bytes[3];
     uint8_t cmd = bytes[4];
-    uint8_t myAddr = civAddressPtr ? *civAddressPtr : 0xB4;
+    uint8_t myAddr = civAddressPtr ? *civAddressPtr : 0xB8;
     uint8_t subcmd = (bytes.size() > 5) ? bytes[5] : 0x00;
+
+    DEBUG_PRINTF("[CI-V] To: 0x%02X, From: 0x%02X, MyAddr: 0x%02X, Cmd: 0x%02X, SubCmd: 0x%02X\n",
+                 toAddr, fromAddr, myAddr, cmd, subcmd);
 
     // Always answer 19 00 requests from broadcast (0x00) or our own address, even if fromAddr == myAddr
     if (cmd != 0x19 || subcmd != 0x00)
@@ -338,8 +350,35 @@ void SMCIV::handleIncomingWsMessage(const String &asciiHex)
         }
     }
 
-    bool isBroadcast = (toAddr == 0x00);
+    bool isBroadcast = (toAddr == 0x00 || toAddr == 0xEE);
     bool isMine = (toAddr == myAddr);
+
+    DEBUG_PRINTF("[CI-V] isBroadcast: %s, isMine: %s\n", isBroadcast ? "true" : "false", isMine ? "true" : "false");
+
+    // Check if this is a response (not a command) - responses should be ignored to prevent loops
+    bool isResponse = false;
+    if (cmd == 0x19 && subcmd == 0x00 && bytes.size() >= 7)
+    {
+        // For 19 00 responses, the data byte should match the FROM address
+        uint8_t dataAddr = bytes[6];
+        if (dataAddr == fromAddr)
+        {
+            isResponse = true;
+            DEBUG_PRINTF("[CI-V] Detected 19 00 response (data addr 0x%02X matches from addr 0x%02X) - ignoring to prevent loop\n", dataAddr, fromAddr);
+        }
+    }
+    else if (cmd == 0x19 && subcmd == 0x01 && bytes.size() >= 10)
+    {
+        // For 19 01 responses, this would contain IP data - responses are longer than commands
+        isResponse = true;
+        DEBUG_PRINTF("[CI-V] Detected 19 01 response (IP data) - ignoring\n");
+    }
+
+    if (isResponse)
+    {
+        DEBUG_PRINTF("[CI-V] Message is a response - ignoring to prevent infinite loop\n");
+        return;
+    }
 
     // Only process valid addressed/broadcast commands, but always process 19 00 from broadcast or our address
     if (
@@ -347,12 +386,16 @@ void SMCIV::handleIncomingWsMessage(const String &asciiHex)
         (cmd == 0x19 && subcmd == 0x01 && (isBroadcast || isMine)) ||
         (cmd == 0x30 && bytes.size() == 6 && bytes[5] == 0xFD && (isBroadcast || isMine)) ||
         (cmd == 0x31 && bytes.size() == 6 && bytes[5] == 0xFD && (isBroadcast || isMine)) ||
+        (cmd == 0x33 && bytes.size() == 6 && bytes[5] == 0xFD && (isBroadcast || isMine)) ||
+        (cmd == 0x34 && bytes.size() == 7 && bytes[6] == 0xFD && (isBroadcast || isMine)) ||
         isMine)
     {
+        DEBUG_PRINTF("[CI-V] Command accepted for processing\n");
         // Allowed, continue
     }
     else
     {
+        DEBUG_PRINTF("[CI-V] Command rejected - not addressed to us\n");
         // Suppress verbose print: Not addressed to us or not a valid broadcast read.
         return;
     }
@@ -367,72 +410,26 @@ void SMCIV::handleIncomingWsMessage(const String &asciiHex)
     {
         if (bytes.size() == 6 && bytes[5] == 0xFD && (isBroadcast || isMine))
         {
-            uint8_t response[] = {0xFE, 0xFE, fromAddr, myAddr, 0x30, rcsType, 0xFD};
-            if (wsClient)
-            {
-                String hexMsg = formatBytesToHex(response, sizeof(response));
-                wsClient->sendTXT(hexMsg);
-            }
+            // This is a tuner model read command (CMD 30 with no subcmd)
+            // Call tuner command handler for model read
+            const uint8_t *dataPtr = nullptr;                    // No data for read
+            handleTunerCommand(cmd, 0x01, fromAddr, dataPtr, 0); // Use subcmd 0x01 for read
             return;
         }
-        if (bytes.size() == 7 && bytes[5] == 0x00 && bytes[6] == 0xFD && isMine)
+        if (bytes.size() == 7 && (bytes[5] == 0x00 || bytes[5] == 0x01) && bytes[6] == 0xFD && isMine)
         {
-            rcsType = 0;
-            // Save to NVS
-            configPrefs.begin("config", false);
-            configPrefs.putInt("rcs_type", rcsType);
-            configPrefs.end();
-
-            // Send correct response format: FE FE EE B4 30 00 FD (without extra data)
-            uint8_t response[] = {0xFE, 0xFE, fromAddr, myAddr, 0x30, 0x00, 0xFD};
-            if (wsClient)
-            {
-                String hexMsg = formatBytesToHex(response, sizeof(response));
-                wsClient->sendTXT(hexMsg);
-            }
-
-            // Trigger callback to notify web UI
-            if (antennaCallback)
-            {
-                antennaCallback(selectedAntennaPort, rcsType);
-            }
-
-            Serial.printf("[SMCIV] RCS type set to RCS-8 (0) via CI-V command\n");
-            return;
-        }
-        if (bytes.size() == 7 && bytes[5] == 0x01 && bytes[6] == 0xFD && isMine)
-        {
-            rcsType = 1;
-            // Save to NVS
-            configPrefs.begin("config", false);
-            configPrefs.putInt("rcs_type", rcsType);
-            configPrefs.end();
-
-            // Send correct response format: FE FE EE B4 30 01 FD (without extra data)
-            uint8_t response[] = {0xFE, 0xFE, fromAddr, myAddr, 0x30, 0x01, 0xFD};
-            if (wsClient)
-            {
-                String hexMsg = formatBytesToHex(response, sizeof(response));
-                wsClient->sendTXT(hexMsg);
-            }
-
-            // Trigger callback to notify web UI
-            if (antennaCallback)
-            {
-                antennaCallback(selectedAntennaPort, rcsType);
-            }
-
-            Serial.printf("[SMCIV] RCS type set to RCS-10 (1) via CI-V command\n");
+            // This is a tuner model set command (CMD 30 with data)
+            // Call tuner command handler for model set
+            const uint8_t *dataPtr = &bytes[5];                  // Data byte (0x00 or 0x01)
+            handleTunerCommand(cmd, 0x00, fromAddr, dataPtr, 1); // Use subcmd 0x00 for set
             return;
         }
         if (isBroadcast && bytes.size() == 7 && (bytes[5] == 0x00 || bytes[5] == 0x01) && bytes[6] == 0xFD)
         {
-            uint8_t response[] = {0xFE, 0xFE, fromAddr, myAddr, 0xFA, 0xFD};
-            if (wsClient)
-            {
-                String hexMsg = formatBytesToHex(response, sizeof(response));
-                wsClient->sendTXT(hexMsg);
-            }
+            // Broadcast set commands are not allowed for tuner model - send NAK
+            uint8_t response[] = {0xFE, 0xFE, fromAddr, myAddr, 0x30, 0xFA, 0xFD};
+            DEBUG_PRINTF("[CI-V] Rejecting broadcast SET command 30 with FA\n");
+            sendCivHexResponse(response, sizeof(response));
             return;
         }
     }
@@ -446,7 +443,7 @@ void SMCIV::handleIncomingWsMessage(const String &asciiHex)
             if (wsClient)
             {
                 String hexMsg = formatBytesToHex(response, sizeof(response));
-                wsClient->sendTXT(hexMsg);
+                sendCivHexResponse(response, sizeof(response));
             }
             return;
         }
@@ -466,7 +463,7 @@ void SMCIV::handleIncomingWsMessage(const String &asciiHex)
                 if (wsClient)
                 {
                     String hexMsg = formatBytesToHex(response, sizeof(response));
-                    wsClient->sendTXT(hexMsg);
+                    sendCivHexResponse(response, sizeof(response));
                 }
                 broadcastAntennaState();
             }
@@ -476,11 +473,76 @@ void SMCIV::handleIncomingWsMessage(const String &asciiHex)
                 if (wsClient)
                 {
                     String hexMsg = formatBytesToHex(response, sizeof(response));
-                    wsClient->sendTXT(hexMsg);
+                    sendCivHexResponse(response, sizeof(response));
                 }
             }
             return;
         }
+    }
+
+    // =========================================================================
+    // ANTENNA TUNER COMMANDS (CMD 30 with different subcmds, 33, 34)
+    // =========================================================================
+
+    // Handle antenna tuner model commands (CMD 30 with specific subcmds)
+    if (cmd == 0x30 && bytes.size() >= 6)
+    {
+        // Check for tuner-specific subcmds that differ from RCS switch commands
+        if (bytes[5] == 0x01 && bytes.size() == 7 && bytes[6] == 0xFD) // Read Model
+        {
+            // Call tuner command handler for model read
+            const uint8_t *dataPtr = nullptr; // No data for read
+            handleTunerCommand(cmd, 0x01, fromAddr, dataPtr, 0);
+            return;
+        }
+        else if (bytes[5] == 0x00 && bytes.size() == 8 && bytes[7] == 0xFD) // Set Model with data
+        {
+            // Call tuner command handler for model set
+            const uint8_t *dataPtr = &bytes[6]; // Data byte
+            handleTunerCommand(cmd, 0x00, fromAddr, dataPtr, 1);
+            return;
+        }
+    }
+
+    // Handle LED indicator read commands (CMD 33)
+    if (cmd == 0x33 && bytes.size() == 6 && bytes[5] == 0xFD)
+    {
+        Serial.println("[DEBUG] Command 33 handler reached - calling tuner command handler");
+        // Simple read command: FE FE addr addr 33 FD
+        const uint8_t *dataPtr = nullptr; // No data for read
+        handleTunerCommand(cmd, 0x01, fromAddr, dataPtr, 0);
+        return;
+    }
+
+    // Handle remote tuner button commands (CMD 34)
+    if (cmd == 0x34 && bytes.size() == 7 && bytes[6] == 0xFD)
+    {
+        uint8_t buttonCode = bytes[5]; // Button code (00-06)
+
+        // Validate button code range
+        if (buttonCode > 0x06)
+        {
+            // Invalid button code - send error response with the invalid code
+            uint8_t response[] = {0xFE, 0xFE, fromAddr, myAddr, 0x34, buttonCode, 0xFA, 0xFD};
+            DEBUG_PRINTF("[CI-V] Invalid button code 0x%02X for command 34\n", buttonCode);
+            sendCivHexResponse(response, sizeof(response));
+            return;
+        }
+
+        // Check if this is a broadcast SET command - these are not allowed
+        if (isBroadcast)
+        {
+            // Broadcast SET commands are rejected with FA (error)
+            uint8_t response[] = {0xFE, 0xFE, fromAddr, myAddr, 0x34, buttonCode, 0xFA, 0xFD};
+            DEBUG_PRINTF("[CI-V] Rejecting broadcast SET command 34 with FA\n");
+            sendCivHexResponse(response, sizeof(response));
+            return;
+        }
+
+        // Direct SET command - process normally
+        const uint8_t *dataPtr = &buttonCode; // Button code
+        handleTunerCommand(cmd, 0x00, fromAddr, dataPtr, 1);
+        return;
     }
 
     if (!(cmd == 0x19 && subcmd == 0x01))
@@ -489,7 +551,7 @@ void SMCIV::handleIncomingWsMessage(const String &asciiHex)
         if (wsClient)
         {
             String hexMsg = formatBytesToHex(response, sizeof(response));
-            wsClient->sendTXT(hexMsg);
+            sendCivHexResponse(response, sizeof(response));
         }
     }
 }
@@ -502,5 +564,194 @@ void SMCIV::handleWsClientEvent(WStype_t type, uint8_t *payload, size_t length)
         Serial.print("[WS CLIENT EVENT] Payload text: ");
         Serial.println(textPayload);
         handleIncomingWsMessage(textPayload);
+    }
+}
+
+// =========================================================================
+// ANTENNA TUNER COMMAND HANDLERS
+// =========================================================================
+
+void SMCIV::setTunerButtonCallback(TunerButtonCallback callback)
+{
+    tunerButtonCallback = callback;
+}
+
+void SMCIV::setTunerIndicatorCallback(TunerIndicatorCallback callback)
+{
+    tunerIndicatorCallback = callback;
+}
+
+void SMCIV::setTunerModelCallback(TunerModelCallback callback)
+{
+    tunerModelCallback = callback;
+}
+
+void SMCIV::setTunerModelSetCallback(TunerModelSetCallback callback)
+{
+    tunerModelSetCallback = callback;
+}
+
+void SMCIV::handleTunerCommand(uint8_t cmd, uint8_t subcmd, uint8_t fromAddr, const uint8_t *data, size_t dataLen)
+{
+    uint8_t civAddr = civAddressPtr ? *civAddressPtr : 0xB8;
+
+    Serial.printf("[CI-V TUNER] Command: 0x%02X, SubCmd: 0x%02X, From: 0x%02X\n", cmd, subcmd, fromAddr);
+
+    switch (cmd)
+    {
+    case 0x30: // Model commands
+    {
+        if (subcmd == 0x01) // Read Model
+        {
+            String model = tunerModelCallback ? tunerModelCallback() : "991-994";
+            uint8_t modelData = (model.indexOf("998") >= 0) ? 0x01 : 0x00;
+
+            uint8_t response[7] = {0xFE, 0xFE, fromAddr, civAddr, 0x30, modelData, 0xFD};
+            Serial.printf("[CI-V TUNER] Model read response: %s (data: 0x%02X)\n", model.c_str(), modelData);
+
+            if (wsClient)
+            {
+                String hexMsg = formatBytesToHex(response, 7);
+                sendCivHexResponse(response, sizeof(response));
+            }
+        }
+        else if (subcmd == 0x00 && dataLen > 0) // Set Model
+        {
+            uint8_t modelCode = data[0];
+            bool success = false;
+
+            // Validate model code first
+            if (modelCode == 0x00 || modelCode == 0x01)
+            {
+                if (tunerModelSetCallback)
+                {
+                    success = tunerModelSetCallback(modelCode);
+                }
+            }
+            else
+            {
+                // Invalid model code - force failure
+                success = false;
+                Serial.printf("[CI-V TUNER] Invalid model code: 0x%02X (valid: 0x00, 0x01)\n", modelCode);
+            }
+
+            if (success)
+            {
+                // Send ACK response: FE FE fromAddr civAddr FB FD
+                uint8_t response[6] = {0xFE, 0xFE, fromAddr, civAddr, 0xFB, 0xFD};
+                Serial.printf("[CI-V TUNER] Model set (code: 0x%02X): ACK\n", modelCode);
+
+                if (wsClient)
+                {
+                    String hexMsg = formatBytesToHex(response, 6);
+                    sendCivHexResponse(response, sizeof(response));
+                }
+            }
+            else
+            {
+                // Send NAK response with original command and data: FE FE fromAddr civAddr 30 modelCode FA FD
+                uint8_t response[8] = {0xFE, 0xFE, fromAddr, civAddr, 0x30, modelCode, 0xFA, 0xFD};
+                Serial.printf("[CI-V TUNER] Model set (code: 0x%02X): NAK with echo\n", modelCode);
+
+                if (wsClient)
+                {
+                    String hexMsg = formatBytesToHex(response, 8);
+                    sendCivHexResponse(response, sizeof(response));
+                }
+            }
+        }
+        break;
+    }
+
+    case 0x33: // Read LED Indicators
+    {
+        Serial.printf("[DEBUG] handleTunerCommand case 0x33, subcmd: 0x%02X\n", subcmd);
+        if (subcmd == 0x01) // Read indicators
+        {
+            uint8_t indicatorStatus = 0x00; // Default: all OFF
+            Serial.println("[DEBUG] About to call tunerIndicatorCallback");
+
+            if (tunerIndicatorCallback)
+            {
+                Serial.println("[DEBUG] tunerIndicatorCallback exists, calling for indicators");
+                bool tuning = tunerIndicatorCallback(1); // 1 = tuning indicator
+                bool swr = tunerIndicatorCallback(2);    // 2 = SWR indicator
+                Serial.printf("[DEBUG] Callback results - tuning: %s, swr: %s\n", tuning ? "true" : "false", swr ? "true" : "false");
+
+                if (tuning && swr)
+                    indicatorStatus = 0x03; // Both ON
+                else if (swr)
+                    indicatorStatus = 0x02; // SWR ON
+                else if (tuning)
+                    indicatorStatus = 0x01; // Tuning ON
+                // else indicatorStatus = 0x00 (already set)
+            }
+            else
+            {
+                Serial.println("[DEBUG] tunerIndicatorCallback is NULL!");
+            }
+
+            uint8_t response[7] = {0xFE, 0xFE, fromAddr, civAddr, 0x33, indicatorStatus, 0xFD};
+            Serial.printf("[CI-V TUNER] Indicator read response: 0x%02X\n", indicatorStatus);
+            Serial.printf("[DEBUG] Sending response: %s\n", formatBytesToHex(response, 7).c_str());
+
+            if (wsClient)
+            {
+                String hexMsg = formatBytesToHex(response, 7);
+                sendCivHexResponse(response, sizeof(response));
+            }
+            else
+            {
+                Serial.println("[DEBUG] wsClient is NULL!");
+            }
+        }
+        else
+        {
+            Serial.printf("[DEBUG] Command 33 with unexpected subcmd: 0x%02X\n", subcmd);
+        }
+        break;
+    }
+
+    case 0x34: // Remote Tuner Buttons
+    {
+        if (dataLen > 0) // Button press command
+        {
+            uint8_t buttonCode = data[0];
+            bool success = false;
+
+            Serial.printf("[CI-V TUNER] Button press: 0x%02X\n", buttonCode);
+
+            if (tunerButtonCallback)
+            {
+                tunerButtonCallback(buttonCode);
+                success = true; // Assume success for button presses
+            }
+
+            // Send ACK/NAK with original command and button code
+            uint8_t response[8] = {0xFE, 0xFE, fromAddr, civAddr, 0x34, buttonCode, (uint8_t)(success ? 0xFB : 0xFA), 0xFD};
+            Serial.printf("[CI-V TUNER] Button press (code: 0x%02X): %s\n", buttonCode, success ? "ACK" : "NAK");
+
+            if (wsClient)
+            {
+                String hexMsg = formatBytesToHex(response, 8);
+                sendCivHexResponse(response, sizeof(response));
+            }
+        }
+        break;
+    }
+
+    default:
+    {
+        // Unknown command - send NAK
+        uint8_t response[6] = {0xFE, 0xFE, fromAddr, civAddr, 0xFA, 0xFD};
+        Serial.printf("[CI-V TUNER] Unknown command: 0x%02X - NAK\n", cmd);
+
+        if (wsClient)
+        {
+            String hexMsg = formatBytesToHex(response, 6);
+            sendCivHexResponse(response, sizeof(response));
+        }
+        break;
+    }
     }
 }
