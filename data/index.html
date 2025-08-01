@@ -751,6 +751,9 @@ function connectWebSocket() {
     const wsUrl = `${protocol}//${window.location.host}/dashboard-ws`;
 
     ws = new WebSocket(wsUrl);
+    
+    // Create global alias for console testing
+    window.websocket = ws;
 
     ws.onopen = function() {
       console.log('Dashboard WebSocket connected at', new Date().toISOString());
@@ -931,9 +934,10 @@ function updateDashboard(data) {
     console.log('No civ_model in dashboard data - this should not happen');
   }
   updateElementIfExists('[data-metric="ip-address"]', data.ip || 'Unknown');
-  let wsServerDisplay = data.websocket_port || 'Unknown';
-  if (/^\d+$/.test(wsServerDisplay) && data.ip) {
-    wsServerDisplay = data.ip + ':' + wsServerDisplay;
+  let wsServerDisplay = data.remote_ws_server || 'Not connected';
+  // Clean up WebSocket server display - remove ws:// prefix and trailing /
+  if (wsServerDisplay !== 'Not connected') {
+    wsServerDisplay = wsServerDisplay.replace(/^ws:\/\//, '').replace(/\/$/, '');
   }
   updateElementIfExists('[data-metric="websocket-port"]', wsServerDisplay);
   updateElementIfExists('[data-metric="udp-port"]', data.udp_port || 'Unknown');
